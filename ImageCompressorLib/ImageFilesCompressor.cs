@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace ImageCompressorLib
 {
-    public class ImageMultiCompressor
+    public class ImageMultiCompressor : IImageMultiCompressor
     {
         private static readonly object lockObject = new object();
 
