@@ -10,12 +10,12 @@ namespace ImageCompressorApp;
 /// </summary>
 public partial class App : Application
 {
-    private readonly IHost host;
+    public IHost AppHost { get; }
 
     public App()
     {
-        host = Host
-            .CreateDefaultBuilder(Environment.GetCommandLineArgs())
+        AppHost = Host
+            .CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
                 services.AddSingleton<IImageProcessor, ImageMultiCompressor>();
@@ -27,7 +27,7 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
-        var vm = host.Services.GetRequiredService<MainWindowViewModel>();
+        var vm = AppHost.Services.GetService<MainWindowViewModel>();
         var window = new MainWindow();
         window.DataContext = vm;
         window.ShowDialog();

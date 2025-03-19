@@ -12,6 +12,7 @@ namespace ImageCompressorApp.Services;
 public interface IImageProcessor
 {
     event Action<string> OnError;
+    event Func<string, int, bool> OnLimitWarning;
 
     void CompressImage(string imageFilePath, long qualityLevel);
     Task CompressImages(string workingFolder, long qualityLevel, int minimumSizeInKb, IProgress<CompressProgressStatus> indicator);
@@ -23,11 +24,14 @@ public interface IImageProcessor
 
 public class ImageMultiCompressor : IImageProcessor
 {
+    public const int WARNING_FILES_MIN_COUNT = 3;
+
     private static readonly object lockObject = new();
 
     private readonly List<string> lastResiedImages = new();
 
     public event Action<string> OnError;
+    public event Func<string, int, bool> OnLimitWarning;
 
     #region Compress
     public async Task CompressImages(string workingFolder, long qualityLevel, int minimumSizeInKb, IProgress<CompressProgressStatus> indicator)
@@ -43,6 +47,11 @@ public class ImageMultiCompressor : IImageProcessor
 
         int total = images.Count();
         int current = 0;
+
+        if (!IsFilesCountCheckSuccess(workingFolder, total))
+        {
+            return;
+        }
 
         foreach (var image in images)
         {
@@ -92,6 +101,11 @@ public class ImageMultiCompressor : IImageProcessor
 
         int total = images.Length;
         int current = 0;
+
+        if (!IsFilesCountCheckSuccess(workingFolder, total))
+        {
+            return;
+        }
 
         foreach (var file in images)
         {
@@ -153,6 +167,11 @@ public class ImageMultiCompressor : IImageProcessor
         int total = images.Count();
         int current = 0;
 
+        if (!IsFilesCountCheckSuccess(workingFolder, total))
+        {
+            return;
+        }
+
         using (SemaphoreSlim semaphore = new(threads))
         {
             var tasks = images
@@ -182,6 +201,11 @@ public class ImageMultiCompressor : IImageProcessor
 
         int total = images.Count();
         int current = 0;
+
+        if (!IsFilesCountCheckSuccess(workingFolder, total))
+        {
+            return;
+        }
 
         foreach (var image in images)
         {
@@ -225,6 +249,17 @@ public class ImageMultiCompressor : IImageProcessor
         File.Move(tempFile, image);
     }
     #endregion
+
+    private bool IsFilesCountCheckSuccess(string folder, int filesCount)
+    {
+        if (filesCount > WARNING_FILES_MIN_COUNT)
+        {
+            var res = OnLimitWarning?.Invoke(folder, filesCount) ?? false;
+
+            return res;
+        }
+        return true;
+    }
 
     private ImageCodecInfo GetEncoder(string fileExt)
     {

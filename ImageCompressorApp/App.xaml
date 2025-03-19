@@ -4,8 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:con="clr-namespace:ImageCompressorApp.Converters"
     xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks"
-    xmlns:local="clr-namespace:ImageCompressorApp"
-    StartupUri="MainWindow.xaml">
+    xmlns:local="clr-namespace:ImageCompressorApp">
     <Application.Resources>
         <con:GreaterThanZeroToVisibilityConverter x:Key="GreaterThanZeroToVisibilityConverter" />
 

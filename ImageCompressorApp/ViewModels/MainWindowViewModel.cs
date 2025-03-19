@@ -38,10 +38,19 @@ public partial class MainWindowViewModel : ObservableObject
 
     public MainWindowViewModel(ISettingsStorage settings, IImageProcessor imageProcessor)
     {
-        Log.CollectionChanged += (o, e) => OnPropertyChanged(nameof(CanCopyErrorsTextCommand));
         this.settings = settings;
         this.imageProcessor = imageProcessor;
+
+        Log.CollectionChanged += (o, e) => OnPropertyChanged(nameof(CanCopyErrorsTextCommand));
         imageProcessor.OnError += (error) => App.Current.Dispatcher.Invoke(() => Log.Add(error));
+        imageProcessor.OnLimitWarning += (folder, filesCount) =>
+        {
+            var res = MessageBox.Show($"В папке {folder} находится {filesCount} файлов которые будут обработаны. \r\nВы действительно хотите выполнить команду ?",
+               "Внимание",
+               MessageBoxButton.YesNoCancel,
+               MessageBoxImage.Warning);
+            return res == MessageBoxResult.Yes;
+        };
     }
 
     [RelayCommand]
@@ -64,6 +73,7 @@ public partial class MainWindowViewModel : ObservableObject
         var ofd = new Microsoft.Win32.OpenFolderDialog();
         if (ofd.ShowDialog() == true)
         {
+            var oldDirectory = WorkingFolder;
             WorkingFolder = ofd.FolderName;
         }
     }
