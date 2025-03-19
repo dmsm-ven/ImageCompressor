@@ -1,89 +1,116 @@
-﻿<Window x:Class="ImageCompressor.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:vm="clr-namespace:ImageCompressor.ViewModels"
-        xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks"
-        mc:Ignorable="d"
-        MinWidth="600"
-        Background="{StaticResource MainWindowBackground}"
-        d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel, IsDesignTimeCreatable=True}"
-        SizeToContent="WidthAndHeight"
-        
-        Title="{Binding Title}" Height="553" Width="700">
+﻿<Window
+    x:Class="ImageCompressor.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:icons="http://metro.mahapps.com/winfx/xaml/iconpacks"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:ImageCompressor.ViewModels"
+    Title="{Binding Title}"
+    Width="640"
+    Height="320"
+    MinWidth="600"
+    d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel,
+                                     IsDesignTimeCreatable=True}"
+    Background="{StaticResource MainWindowBackground}"
+    SizeToContent="WidthAndHeight"
+    mc:Ignorable="d">
 
     <Grid Margin="4">
         <Grid.Background>
-            <SolidColorBrush Color="#A4E483" Opacity="0.5"/>
+            <SolidColorBrush Opacity="0.5" Color="#A4E483" />
         </Grid.Background>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <Grid Grid.Row="0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <Label Content="Рабочая папка" Foreground="#588FBB"
-                   Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"/>
+            <Label
+                Grid.Row="0"
+                Grid.Column="0"
+                Grid.ColumnSpan="2"
+                Content="Рабочая папка"
+                Foreground="#588FBB" />
 
-            <TextBox x:Name="txtFilesFolder" 
-                     Grid.Row="1" Grid.Column="0"
-                     Text="{Binding WorkingFolder}"
-                     Margin="0 8 0 8" 
-                     Width="Auto"
-                     HorizontalContentAlignment="Left"
-                     Height="22"
-                     FontSize="14"
-                     d:Text="C:\\Windows\Users\user\desktop"
-                     Foreground="#7A6565"
-                     BorderBrush="LightGray"/>
+            <TextBox
+                x:Name="txtFilesFolder"
+                Grid.Row="1"
+                Grid.Column="0"
+                Width="Auto"
+                Height="22"
+                Margin="0,8,0,8"
+                HorizontalContentAlignment="Left"
+                d:Text="C:\\Windows\Users\user\desktop"
+                BorderBrush="LightGray"
+                FontSize="14"
+                Foreground="#7A6565"
+                Text="{Binding WorkingFolder}" />
 
-            <Button Grid.Column="1" Grid.Row="1" Command="{Binding SelectImagesFolderCommand}" Style="{StaticResource ImageButtonStyle}">
+            <Button
+                Grid.Row="1"
+                Grid.Column="1"
+                Command="{Binding SelectImagesFolderCommand}"
+                Style="{StaticResource ImageButtonStyle}">
                 <icons:PackIconFontAwesome Kind="FolderOpenRegular" Style="{StaticResource MediumIconSize}" />
+            </Button>
+            <Button
+                Grid.Row="1"
+                Grid.Column="2"
+                Command="{Binding SelectDownloadFolderCommand}"
+                Style="{StaticResource ImageButtonStyle}"
+                ToolTip="Выбрать папку загрузки">
+                <icons:PackIconFontAwesome Kind="DownloadSolid" Style="{StaticResource MediumIconSize}" />
             </Button>
         </Grid>
 
         <Grid Grid.Row="1" Grid.IsSharedSizeScope="True">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" Style="{StaticResource SectionBorderStyle}">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" SharedSizeGroup="valuesColumn"/>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="valuesColumn" />
                     </Grid.ColumnDefinitions>
-                    
-                    <Button Grid.Column="0" 
-                            Command="{Binding ConvertImagesCommand}"
-                            Style="{StaticResource ImageButtonStyle}">
+
+                    <Button
+                        Grid.Column="0"
+                        Command="{Binding ConvertImagesCommand}"
+                        Style="{StaticResource ImageButtonStyle}">
                         <icons:PackIconFontAwesome Kind="ImagesSolid" Style="{StaticResource BigIconSize}" />
                     </Button>
-                    <Label Grid.Column="1" Content="Преобразование .png и .gif в .jpg" HorizontalAlignment="Left"  />
+                    <Label
+                        Grid.Column="1"
+                        HorizontalAlignment="Left"
+                        Content="Преобразование .png и .gif в .jpg" />
 
-                    <TextBlock Text="Удалять оригиналы" Grid.Column="2"/>
-                    <CheckBox IsChecked="{Binding CompressParameters.IsDeleteFilesAfterCompress}" 
-                              Grid.Column="3"
-                              HorizontalAlignment="Center"
-                              BorderBrush="LightGray"
-                              VerticalAlignment="Center">
+                    <TextBlock Grid.Column="2" Text="Удалять оригиналы" />
+                    <CheckBox
+                        Grid.Column="3"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        BorderBrush="LightGray"
+                        IsChecked="{Binding CompressParameters.IsDeleteFilesAfterCompress}">
                         <CheckBox.LayoutTransform>
-                            <ScaleTransform ScaleX="1.5" ScaleY="1.5"/>
+                            <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
                         </CheckBox.LayoutTransform>
                     </CheckBox>
                 </Grid>
@@ -92,32 +119,54 @@
             <Border Grid.Row="1" Style="{StaticResource SectionBorderStyle}">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*" SharedSizeGroup="valuesColumn"/>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" SharedSizeGroup="valuesColumn" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Button Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
-                            Style="{StaticResource ImageButtonStyle}"
-                            Command="{Binding CompressImagesCommand}">
+                    <Button
+                        Grid.Row="0"
+                        Grid.RowSpan="2"
+                        Grid.Column="0"
+                        Command="{Binding CompressImagesCommand}"
+                        Style="{StaticResource ImageButtonStyle}">
                         <icons:PackIconFontAwesome Kind="FileArchiveSolid" Style="{StaticResource BigIconSize}" />
                     </Button>
 
-                    <Label Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Content="Сжатие изображений"/>
+                    <Label
+                        Grid.Row="0"
+                        Grid.RowSpan="2"
+                        Grid.Column="1"
+                        Content="Сжатие изображений" />
 
-                    <TextBlock Grid.Row="0" Grid.Column="2" 
-                               HorizontalAlignment="Right"
-                               Text="Мин. размер для сжатия, КБ"/>
-                    <TextBlock Grid.Row="1" Grid.Column="2"
-                               HorizontalAlignment="Right"
-                               Text="{Binding CompressParameters.SelectedQuality, StringFormat='Качество сжатия: {0:N0}%'}" Margin="2"  DockPanel.Dock="Top"/>
+                    <TextBlock
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        HorizontalAlignment="Right"
+                        Text="Мин. размер для сжатия, КБ" />
+                    <TextBlock
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        Margin="2"
+                        HorizontalAlignment="Right"
+                        DockPanel.Dock="Top"
+                        Text="{Binding CompressParameters.SelectedQuality, StringFormat='Качество сжатия: {0:N0}%'}" />
 
-                    <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding CompressParameters.MinimumSizeToCompressInKb}"></TextBox>
-                    <Slider Grid.Row="1" Grid.Column="3" Value="{Binding CompressParameters.SelectedQuality}" Minimum="50" Maximum="100" Height="20" />
+                    <TextBox
+                        Grid.Row="0"
+                        Grid.Column="3"
+                        Text="{Binding CompressParameters.MinimumSizeToCompressInKb}" />
+                    <Slider
+                        Grid.Row="1"
+                        Grid.Column="3"
+                        Height="20"
+                        Maximum="100"
+                        Minimum="50"
+                        Value="{Binding CompressParameters.SelectedQuality}" />
 
 
 
@@ -127,30 +176,69 @@
             <Border Grid.Row="2" Style="{StaticResource SectionBorderStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*" SharedSizeGroup="valuesColumn"/>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" SharedSizeGroup="valuesColumn" />
                     </Grid.ColumnDefinitions>
-                    
-                    <Button Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Command="{Binding ResizeImagesCommand}" 
-                            Style="{StaticResource ImageButtonStyle}">
-                        <icons:PackIconFontAwesome Kind="CompressArrowsAltSolid" Style="{StaticResource BigIconSize}"/>
+
+                    <Button
+                        Grid.Row="0"
+                        Grid.RowSpan="2"
+                        Grid.Column="0"
+                        Command="{Binding ResizeImagesCommand}"
+                        Style="{StaticResource ImageButtonStyle}">
+                        <icons:PackIconFontAwesome Kind="CompressArrowsAltSolid" Style="{StaticResource BigIconSize}" />
                     </Button>
 
-                    <Label Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Content="Изменить разрешение" />
+                    <Label
+                        Grid.Row="0"
+                        Grid.RowSpan="2"
+                        Grid.Column="1"
+                        Content="Изменить разрешение" />
 
-                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Ширина" HorizontalAlignment="Right" />
-                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Высота" HorizontalAlignment="Right" />
+                    <TextBlock
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        HorizontalAlignment="Right"
+                        Text="Ширина" />
+                    <TextBlock
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        HorizontalAlignment="Right"
+                        Text="Высота" />
 
-                    <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding CompressParameters.ResizeWidth, UpdateSourceTrigger=PropertyChanged}"></TextBox>
-                    <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding CompressParameters.ResizeHeight, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                    <TextBox
+                        Grid.Row="0"
+                        Grid.Column="3"
+                        Text="{Binding CompressParameters.ResizeWidth, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox
+                        Grid.Row="1"
+                        Grid.Column="3"
+                        Text="{Binding CompressParameters.ResizeHeight, UpdateSourceTrigger=PropertyChanged}" />
 
+                    <TextBlock
+                        Grid.Row="2"
+                        Grid.Column="2"
+                        HorizontalAlignment="Right"
+                        Text="Удалять предыдущие" />
 
+                    <CheckBox
+                       Grid.Row="2"
+                        Grid.Column="3"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        BorderBrush="LightGray"
+                        IsChecked="{Binding CompressParameters.IsDeletePreviusResizedImages}">
+                        <CheckBox.LayoutTransform>
+                            <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
+                        </CheckBox.LayoutTransform>
+                    </CheckBox>
 
                 </Grid>
             </Border>
@@ -158,32 +246,52 @@
             <Border Grid.Row="3" Style="{StaticResource SectionBorderStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*" SharedSizeGroup="valuesColumn"/>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" SharedSizeGroup="valuesColumn" />
                     </Grid.ColumnDefinitions>
 
-                    <Button Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" 
-                            Command="{Binding EraseWatermarksCommand}" 
-                            Style="{StaticResource ImageButtonStyle}"
-                            ToolTip="Закрашивает прямоугольник указанного размера в **правом нижнем углу** каждого изображения">
-                        <icons:PackIconFontAwesome Kind="StampSolid" Style="{StaticResource BigIconSize}"/>
+                    <Button
+                        Grid.Row="0"
+                        Grid.RowSpan="2"
+                        Grid.Column="0"
+                        Command="{Binding EraseWatermarksCommand}"
+                        Style="{StaticResource ImageButtonStyle}"
+                        ToolTip="Закрашивает прямоугольник указанного размера в **правом нижнем углу** каждого изображения">
+                        <icons:PackIconFontAwesome Kind="StampSolid" Style="{StaticResource BigIconSize}" />
                     </Button>
 
-                    <Label Grid.Row="0" Grid.Column="1" Grid.RowSpan="2">Закрасить водяные знаки</Label>
+                    <Label
+                        Grid.Row="0"
+                        Grid.RowSpan="2"
+                        Grid.Column="1">
+                        Закрасить водяные знаки
+                    </Label>
 
-                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Ширина" HorizontalAlignment="Right" />
-                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Высота" HorizontalAlignment="Right" />
+                    <TextBlock
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        HorizontalAlignment="Right"
+                        Text="Ширина" />
+                    <TextBlock
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        HorizontalAlignment="Right"
+                        Text="Высота" />
 
-                    <TextBox Grid.Row="0" Grid.Column="3" 
-                             Text="{Binding CompressParameters.WatermarkWidth, UpdateSourceTrigger=PropertyChanged}"></TextBox>
-                    <TextBox Grid.Row="1" Grid.Column="3" 
-                             Text="{Binding CompressParameters.WatermarkHeight, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                    <TextBox
+                        Grid.Row="0"
+                        Grid.Column="3"
+                        Text="{Binding CompressParameters.WatermarkWidth, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox
+                        Grid.Row="1"
+                        Grid.Column="3"
+                        Text="{Binding CompressParameters.WatermarkHeight, UpdateSourceTrigger=PropertyChanged}" />
 
 
                 </Grid>

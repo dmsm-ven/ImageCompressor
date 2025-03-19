@@ -12,21 +12,21 @@ namespace ImageCompressor.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        readonly ImageMultiCompressor compressor;
-        readonly ImageWatermarkEraser watermarkEraser;
-        readonly SettingsManager<UserSettings> settingsManager;
-        readonly UserSettings settings;
+        private readonly ImageMultiCompressor compressor;
+        private readonly ImageWatermarkEraser watermarkEraser;
+        private readonly SettingsManager<UserSettings> settingsManager;
+        private readonly UserSettings settings;
 
         public ObservableCollection<string> Log { get; }
 
-        string title = "Обработчик изображений";
+        private string title = "Обработчик изображений";
         public string Title
         {
             get => title;
             set => Set(ref title, value);
         }
 
-        bool inProgress;
+        private bool inProgress;
         public bool InProgress
         {
             get => inProgress;
@@ -36,25 +36,25 @@ namespace ImageCompressor.ViewModels
         public CompressParameters CompressParameters { get; }
 
         private ProgressStatus _progressStatus = new ProgressStatus(0, 0);
-        public ProgressStatus ProgressStatus 
-        { 
-            get => _progressStatus; 
-            set => Set(ref _progressStatus, value); 
+        public ProgressStatus ProgressStatus
+        {
+            get => _progressStatus;
+            set => Set(ref _progressStatus, value);
         }
 
-        string _workingFolder = "";
-        public string WorkingFolder 
-        { 
-            get => _workingFolder; 
-            set  
+        private string _workingFolder = "";
+        public string WorkingFolder
+        {
+            get => _workingFolder;
+            set
             {
                 if (Set(ref _workingFolder, value))
-                {                    
+                {
                     settings.WorkingFolder = value;
                     settingsManager.SaveSettings(settings);
                     RaisePropertyChanged(nameof(WorkingFolderExists));
                 }
-            } 
+            }
         }
 
         private bool WorkingFolderExists
@@ -71,11 +71,12 @@ namespace ImageCompressor.ViewModels
         public ICommand CompressImagesCommand { get; }
         public ICommand EraseWatermarksCommand { get; }
         public ICommand SelectImagesFolderCommand { get; }
+        public ICommand SelectDownloadFolderCommand { get; }
 
         public MainWindowViewModel()
         {
             CompressParameters = new CompressParameters();
-            Log = new ObservableCollection<string>();          
+            Log = new ObservableCollection<string>();
 
             SelectImagesFolderCommand = new LambdaCommand(SelectImagesFolder);
             CopyErrorsTextCommand = new LambdaCommand((param) => Clipboard.SetText(string.Join(Environment.NewLine, Log)), (p) => Log.Count > 0);
@@ -83,6 +84,10 @@ namespace ImageCompressor.ViewModels
             ConvertImagesCommand = new LambdaCommand(ConvertImages, (p) => WorkingFolderExists);
             CompressImagesCommand = new LambdaCommand(CompressImages, (p) => WorkingFolderExists);
             EraseWatermarksCommand = new LambdaCommand(EraseWatermakrs, (p) => WorkingFolderExists);
+            SelectDownloadFolderCommand = new LambdaCommand((e) =>
+            {
+                WorkingFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+            });
         }
 
         public MainWindowViewModel(ImageMultiCompressor compressor, ImageWatermarkEraser watermarkEraser, SettingsManager<UserSettings> settingsManager) : this()
@@ -98,7 +103,7 @@ namespace ImageCompressor.ViewModels
         private void SelectImagesFolder(object obj)
         {
             var ofd = new System.Windows.Forms.FolderBrowserDialog();
-            if(ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            if (ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 WorkingFolder = ofd.SelectedPath;
             }
@@ -128,7 +133,7 @@ namespace ImageCompressor.ViewModels
             try
             {
                 InProgress = true;
-              
+
                 await compressor.SaveAllAsJpg(WorkingFolder, CompressParameters.IsDeleteFilesAfterCompress, CreateIndicatorCallback());
 
                 MessageBox.Show($"Конвертация в JPG выполнена", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -149,13 +154,24 @@ namespace ImageCompressor.ViewModels
 
             InProgress = true;
             try
-            {               
+            {
+                int? deleted = null;
+
+                if (CompressParameters.IsDeletePreviusResizedImages)
+                {
+                    deleted = await compressor.DeletePreviusResizedImages();
+                }
+
                 if (CompressParameters.ResizeWidth > 32 && CompressParameters.ResizeHeight > 32)
                 {
-                    await compressor.ResizeImages(WorkingFolder, 
+                    await compressor.ResizeImages(WorkingFolder,
                         new System.Drawing.Size(CompressParameters.ResizeWidth, CompressParameters.ResizeHeight), CreateIndicatorCallback());
 
-                    MessageBox.Show($"Изменение размеров выполнено", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Title = $"Обработчик изображений | изменение размеров выполнено";
+                    if (deleted.HasValue && deleted.Value > 0)
+                    {
+                        Title += $" | удалено {deleted.Value} изображений";
+                    }
                 }
             }
             catch (Exception ex)
@@ -169,13 +185,13 @@ namespace ImageCompressor.ViewModels
         }
 
         private async void CompressImages(object param)
-        {           
+        {
             InProgress = true;
             try
             {
-                await compressor.CompressImages(WorkingFolder, 
-                    CompressParameters.SelectedQuality, 
-                    CompressParameters.MinimumSizeToCompressInKb, 
+                await compressor.CompressImages(WorkingFolder,
+                    CompressParameters.SelectedQuality,
+                    CompressParameters.MinimumSizeToCompressInKb,
                     CreateIndicatorCallback());
 
                 MessageBox.Show($"Сжатие изображений выполнено", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);

@@ -7,12 +7,17 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ImageCompressorLib
 {
     public class ImageMultiCompressor
     {
+        private static readonly object lockObject = new object();
+
+        private readonly List<string> lastResiedImages = new List<string>();
+
         public event Action<string> OnError;
 
         #region Compress
@@ -46,7 +51,7 @@ namespace ImageCompressorLib
 
         public void CompressImage(string imageFilePath, long qualityLevel)
         {
-           
+
             string tempImage = Path.GetTempFileName();
 
             using (var image = (Bitmap)Bitmap.FromFile(imageFilePath))
@@ -86,16 +91,16 @@ namespace ImageCompressorLib
                 try
                 {
                     // Если jpeg то просто переименовываем
-                    if (ext.Equals(".jpg"))
+                    if (ext.Equals(".jpeg"))
                     {
                         File.Move(file, file.Replace(".jpeg", ".jpg"));
                     }
-                    else if(new string[] { ".png", ".gif" }.Contains(ext))
+                    else if (new string[] { ".png", ".gif" }.Contains(ext))
                     {
                         await Task.Run(() => ConvertToJpg(file, removeOriginalFiles)).ConfigureAwait(false);
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     OnError?.Invoke(ex.Message + $" ({file})");
                 }
@@ -128,6 +133,40 @@ namespace ImageCompressorLib
         #endregion
 
         #region Resize
+        public async Task ResizeImages(string workingFolder, Size newSize, int threads, IProgress<ProgressStatus> indicator)
+        {
+            if (threads <= 0 || threads > (Environment.ProcessorCount * 3))
+            {
+                throw new ArgumentOutOfRangeException(nameof(threads));
+            }
+
+            var images = Directory.GetFiles(workingFolder, "*.*", SearchOption.AllDirectories).ToArray();
+            int total = images.Count();
+            int current = 0;
+
+            using (SemaphoreSlim semaphore = new SemaphoreSlim(threads))
+            {
+                var tasks = images
+                    .Select(img => Task.Run(() =>
+                    {
+                        semaphore.Wait();
+                        ResizeImage(img, newSize);
+                        semaphore.Release();
+                    })
+                    .ContinueWith(t =>
+                    {
+                        lock (lockObject)
+                        {
+                            current++;
+                            indicator?.Report(new ProgressStatus(current, total));
+                        }
+                    }));
+
+                await Task.WhenAll(tasks);
+            }
+
+        }
+
         public async Task ResizeImages(string workingFolder, Size newSize, IProgress<ProgressStatus> indicator)
         {
             var images = Directory.GetFiles(workingFolder, "*.*", SearchOption.AllDirectories).ToArray();
@@ -151,7 +190,7 @@ namespace ImageCompressorLib
 
         private void ResizeImage(string image, Size newSize)
         {
-            ResizeLayer resizeLayer = new ResizeLayer(newSize, ResizeMode.Pad);
+            ResizeLayer resizeLayer = new ResizeLayer(newSize, ResizeMode.BoxPad);
 
             var tempFile = Path.GetTempFileName();
 
@@ -162,11 +201,13 @@ namespace ImageCompressorLib
                     // Load, resize, set the format and quality and save an image.
                     using (var newFile = new FileStream(tempFile, FileMode.Create))
                     {
-                            imageFactory
-                            .Load(fs)
-                            .Resize(resizeLayer)
-                            .BackgroundColor(Color.White)
-                            .Save(newFile);
+                        imageFactory
+                        .Load(fs)
+                        .Resize(resizeLayer)
+                        .BackgroundColor(Color.White)
+                        .Save(newFile);
+
+                        lastResiedImages.Add(image);
                     }
                 }
             }
@@ -175,7 +216,7 @@ namespace ImageCompressorLib
             File.Move(tempFile, image);
         }
         #endregion
-               
+
         private ImageCodecInfo GetEncoder(string fileExt)
         {
             ImageFormat format = null;
@@ -196,6 +237,30 @@ namespace ImageCompressorLib
                 }
             }
             return null;
+        }
+
+        public async Task<int> DeletePreviusResizedImages()
+        {
+            int totalDeleted = 0;
+
+            if (lastResiedImages.Count == 0)
+            {
+                return 0;
+            }
+
+            foreach (var file in lastResiedImages)
+            {
+                if (File.Exists(file))
+                {
+                    await Task.Run(() => File.Delete(file));
+                }
+            }
+
+            lastResiedImages.Clear();
+
+            await Task.Delay(TimeSpan.FromMilliseconds(400));
+
+            return totalDeleted;
         }
     }
 }
