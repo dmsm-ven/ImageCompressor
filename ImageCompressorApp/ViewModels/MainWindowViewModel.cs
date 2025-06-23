@@ -126,7 +126,9 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 await imageProcessor.ResizeImages(WorkingFolder,
                     new ImageSize(CompressParameters.ResizeWidth, CompressParameters.ResizeHeight),
-                    CreateIndicatorCallback());
+                    CompressParameters.SelectedResizeMode,
+                    CreateIndicatorCallback(),
+                    threads: 8);
 
                 Title = $"Обработчик изображений | изменение размеров выполнено";
                 if (deleted.HasValue && deleted.Value > 0)

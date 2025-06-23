@@ -5,6 +5,7 @@ using ImageProcessor.Imaging.Formats;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Text.RegularExpressions;
 using Encoder = System.Drawing.Imaging.Encoder;
 
 namespace ImageCompressorApp.Services;
@@ -15,16 +16,15 @@ public interface IImageProcessor
     event Func<string, int, bool> OnLimitWarning;
 
     void CompressImage(string imageFilePath, long qualityLevel);
-    Task CompressImages(string workingFolder, long qualityLevel, int minimumSizeInKb, IProgress<CompressProgressStatus> indicator);
+    Task CompressImages(string workingFolder, long qualityLevel, int minimumSizeInKb, IProgress<CompressProgressStatus>? indicator = null);
     Task<int> DeletePreviusResizedImages();
-    Task ResizeImages(string workingFolder, ImageSize newSize, int threads, IProgress<CompressProgressStatus> indicator);
-    Task ResizeImages(string workingFolder, ImageSize newSize, IProgress<CompressProgressStatus> indicator);
-    Task SaveAllAsJpg(string workingFolder, bool removeOriginalFiles, IProgress<CompressProgressStatus> indicator);
+    Task ResizeImages(string workingFolder, ImageSize newSize, ResizeMode resizeMode, IProgress<CompressProgressStatus>? indicator = null, int threads = 1);
+    Task SaveAllAsJpg(string workingFolder, bool removeOriginalFiles, IProgress<CompressProgressStatus>? indicator = null);
 }
 
 public class ImageMultiCompressor : IImageProcessor
 {
-    public const int WARNING_FILES_MIN_COUNT = 3;
+    public const int WARNING_FILES_MIN_COUNT = 1000;
 
     private static readonly object lockObject = new();
 
@@ -96,7 +96,7 @@ public class ImageMultiCompressor : IImageProcessor
     {
         var images = Directory
             .GetFiles(workingFolder, "*.*", SearchOption.AllDirectories)
-            .Where(img => Path.GetExtension(img).ToLower() != ".jpg")
+            .Where(img => Path.GetExtension(img).ToLower() != ".jpg" || Regex.IsMatch(img, @"\.JPG$"))
             .ToArray();
 
         int total = images.Length;
@@ -114,9 +114,10 @@ public class ImageMultiCompressor : IImageProcessor
             try
             {
                 // Если jpeg то просто переименовываем
-                if (ext.Equals(".jpeg"))
+                if (ext.Equals(".jpeg") || file.EndsWith(".JPG"))
                 {
-                    File.Move(file, file.Replace(".jpeg", ".jpg"));
+                    string newFile = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file) + ".jpg");
+                    File.Move(file, newFile);
                 }
                 else if (new string[] { ".png", ".gif" }.Contains(ext))
                 {
@@ -156,7 +157,10 @@ public class ImageMultiCompressor : IImageProcessor
     #endregion
 
     #region Resize
-    public async Task ResizeImages(string workingFolder, ImageSize newSize, int threads, IProgress<CompressProgressStatus> indicator)
+    public async Task ResizeImages(string workingFolder,
+        ImageSize newSize,
+        ResizeMode resizeMode,
+        IProgress<CompressProgressStatus> indicator = null, int threads = 2)
     {
         if (threads <= 0 || threads > (Environment.ProcessorCount * 3))
         {
@@ -178,7 +182,7 @@ public class ImageMultiCompressor : IImageProcessor
                 .Select(img => Task.Run(() =>
                 {
                     semaphore.Wait();
-                    ResizeImage(img, new(newSize.Width, newSize.Height));
+                    ResizeImage(img, new(newSize.Width, newSize.Height), resizeMode);
                     semaphore.Release();
                 })
                 .ContinueWith(t =>
@@ -195,7 +199,7 @@ public class ImageMultiCompressor : IImageProcessor
 
     }
 
-    public async Task ResizeImages(string workingFolder, ImageSize newSize, IProgress<CompressProgressStatus> indicator)
+    public async Task ResizeImages(string workingFolder, ImageSize newSize, ResizeMode resizeMode, IProgress<CompressProgressStatus> indicator)
     {
         var images = Directory.GetFiles(workingFolder, "*.*", SearchOption.AllDirectories).ToArray();
 
@@ -211,7 +215,7 @@ public class ImageMultiCompressor : IImageProcessor
         {
             try
             {
-                await Task.Run(() => ResizeImage(image, newSize)).ConfigureAwait(false);
+                await Task.Run(() => ResizeImage(image, newSize, resizeMode)).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -221,9 +225,9 @@ public class ImageMultiCompressor : IImageProcessor
         }
     }
 
-    private void ResizeImage(string image, ImageSize newSize)
+    private void ResizeImage(string image, ImageSize newSize, ResizeMode resizeMode)
     {
-        ResizeLayer resizeLayer = new(new System.Drawing.Size(newSize.Width, newSize.Height), ImageProcessor.Imaging.ResizeMode.BoxPad);
+        ResizeLayer resizeLayer = new(new System.Drawing.Size(newSize.Width, newSize.Height), resizeMode);
 
         var tempFile = Path.GetTempFileName();
 

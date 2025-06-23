@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using ImageProcessor.Imaging;
 
 namespace ImageCompressorApp.ViewModels;
 
@@ -27,4 +28,9 @@ public partial class CompressParametersViewodel : ObservableObject
 
     [ObservableProperty]
     public bool isDeletePreviusResizedImages = false;
+
+    [ObservableProperty]
+    public bool isStretchInstedOfPad = false;
+
+    public ResizeMode SelectedResizeMode => IsStretchInstedOfPad ? ResizeMode.Stretch : ResizeMode.BoxPad;
 }

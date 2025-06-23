@@ -191,6 +191,7 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -249,6 +250,24 @@
                         VerticalAlignment="Center"
                         BorderBrush="LightGray"
                         IsChecked="{Binding CompressParameters.IsDeletePreviusResizedImages}">
+                        <CheckBox.LayoutTransform>
+                            <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
+                        </CheckBox.LayoutTransform>
+                    </CheckBox>
+
+                    <TextBlock
+    Grid.Row="3"
+    Grid.Column="2"
+    HorizontalAlignment="Right"
+    Text="Растягивать" />
+
+                    <CheckBox
+    Grid.Row="3"
+    Grid.Column="3"
+    HorizontalAlignment="Center"
+    VerticalAlignment="Center"
+    BorderBrush="LightGray"
+    IsChecked="{Binding CompressParameters.IsStretchInstedOfPad}">
                         <CheckBox.LayoutTransform>
                             <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
                         </CheckBox.LayoutTransform>
