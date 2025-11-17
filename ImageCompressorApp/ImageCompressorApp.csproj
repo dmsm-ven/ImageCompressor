@@ -2,25 +2,47 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>image_converter_icon.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="image_converter_icon.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+
+	<!-- compile fix for .NET10 migration  -->
+<Target Name="_addDrawingReference" AfterTargets="ResolveTargetingPackAssets">
+	<ItemGroup>
+		<Reference Condition="'%(Reference.FileName)' == 'PresentationCore'"
+					Include="%(Reference.RootDir)%(Reference.Directory)System.Drawing.Common.dll;
+                        %(Reference.RootDir)%(Reference.Directory)System.Private.Windows.GdiPlus.dll" />
+	</ItemGroup>
+</Target>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="ImageProcessor" Version="2.9.0" />
-    <PackageReference Include="MahApps.Metro.IconPacks.FontAwesome" Version="5.1.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.3" />
+    <PackageReference Include="MahApps.Metro.IconPacks.FontAwesome" Version="6.2.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
-    <PackageReference Include="System.Drawing.Common" Version="9.0.3" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Assets\background-texture-2.jpg" />
-    <Resource Include="Assets\background-texture.jpg" />
+    <Resource Include="Assets\background-texture.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
 
 </Project>

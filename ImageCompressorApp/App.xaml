@@ -18,13 +18,6 @@
             <Setter Property="Height" Value="42" />
         </Style>
 
-        <ImageBrush
-            x:Key="MainWindowBackground"
-            ImageSource="/Assets/background-texture.jpg"
-            TileMode="FlipY"
-            Viewport="0,0,300,300"
-            ViewportUnits="Absolute" />
-
         <SolidColorBrush x:Key="SectionCaptionBrush" Color="#1A79DC" />
 
         <Style TargetType="Label">

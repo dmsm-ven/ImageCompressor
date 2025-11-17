@@ -8,12 +8,12 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:ImageCompressorApp.ViewModels"
     Title="{Binding Title}"
+    Icon="/image_converter_icon.ico"
     Width="640"
     Height="392"
     MinWidth="600"
-    d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel_DesignTime,
-                                     IsDesignTimeCreatable=True}"
-    Background="{StaticResource MainWindowBackground}"
+    d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel,
+                                     IsDesignTimeCreatable=False}"
     SizeToContent="WidthAndHeight"
     mc:Ignorable="d">
     <Grid Margin="4">

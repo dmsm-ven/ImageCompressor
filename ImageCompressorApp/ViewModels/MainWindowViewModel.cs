@@ -11,7 +11,6 @@ namespace ImageCompressorApp.ViewModels;
 public partial class MainWindowViewModel : ObservableObject
 {
     //private readonly ImageMultiCompressor compressor;
-    private readonly ISettingsStorage settings;
     private readonly IImageProcessor imageProcessor;
 
     [ObservableProperty]
@@ -36,9 +35,8 @@ public partial class MainWindowViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(ConvertImagesCommand))]
     public string workingFolder = "";
 
-    public MainWindowViewModel(ISettingsStorage settings, IImageProcessor imageProcessor)
+    public MainWindowViewModel(IImageProcessor imageProcessor)
     {
-        this.settings = settings;
         this.imageProcessor = imageProcessor;
 
         Log.CollectionChanged += (o, e) => OnPropertyChanged(nameof(CanCopyErrorsTextCommand));
@@ -51,12 +49,6 @@ public partial class MainWindowViewModel : ObservableObject
                MessageBoxImage.Warning);
             return res == MessageBoxResult.Yes;
         };
-    }
-
-    [RelayCommand]
-    public async Task Loaded()
-    {
-        WorkingFolder = (await settings.LoadSettings<UserSettingsEntry>()).WorkingFolder;
     }
 
     public bool WorkingDirectoryExists => Directory.Exists(WorkingFolder);
@@ -81,7 +73,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(WorkingDirectoryExists))]
     private void EraseWatermakrs()
     {
-        MessageBox.Show("Not implemented");
+        //MessageBox.Show("Not implemented");
     }
 
     [RelayCommand(CanExecute = nameof(WorkingDirectoryExists))]
@@ -95,11 +87,11 @@ public partial class MainWindowViewModel : ObservableObject
 
             await imageProcessor.SaveAllAsJpg(WorkingFolder, CompressParameters.IsDeleteFilesAfterCompress, CreateIndicatorCallback());
 
-            MessageBox.Show($"Конвертация в JPG выполнена", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
+            Title = $"Конвертация в JPG выполнена";
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message + "\r\n\r\n" + ex.StackTrace, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            Title = ex.Message + "\r\n\r\n" + ex.StackTrace;
         }
         finally
         {
@@ -139,7 +131,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message + "\r\n\r\n" + ex.StackTrace, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            Title = ex.Message + "\r\n\r\n" + ex.StackTrace;
         }
         finally
         {
@@ -158,11 +150,11 @@ public partial class MainWindowViewModel : ObservableObject
                 CompressParameters.MinimumSizeToCompressInKb,
                 CreateIndicatorCallback());
 
-            MessageBox.Show($"Сжатие изображений выполнено", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
+            Title = $"Сжатие изображений выполнено";
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message + "\r\n\r\n" + ex.StackTrace, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            Title = ex.Message + "\r\n\r\n" + ex.StackTrace;
         }
         finally
         {
