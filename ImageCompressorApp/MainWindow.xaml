@@ -28,7 +28,6 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-
         <Grid Grid.Row="0" Grid.ColumnSpan="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -39,14 +38,12 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-
             <Label
                 Grid.Row="0"
                 Grid.Column="0"
                 Grid.ColumnSpan="2"
                 Content="Рабочая папка"
                 Foreground="#588FBB" />
-
             <TextBox
                 x:Name="txtFilesFolder"
                 Grid.Row="1"
@@ -61,7 +58,6 @@
                 FontSize="14"
                 Foreground="#7A6565"
                 Text="{Binding WorkingFolder}" />
-
             <Button
                 Grid.Row="1"
                 Grid.Column="1"
@@ -78,7 +74,6 @@
                 <icons:PackIconFontAwesome Kind="DownloadSolid" Style="{StaticResource MediumIconSize}" />
             </Button>
         </Grid>
-
         <Grid
             Grid.RowSpan="2"
             Grid.ColumnSpan="2"
@@ -90,7 +85,6 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-
             <!--  Преобразование в jpeg  -->
             <Border Grid.Row="0" Style="{StaticResource SectionBorderStyle}">
                 <Grid>
@@ -100,7 +94,6 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" SharedSizeGroup="valuesColumn" />
                     </Grid.ColumnDefinitions>
-
                     <Button
                         Grid.Column="0"
                         Command="{Binding ConvertImagesCommand}"
@@ -111,7 +104,6 @@
                         Grid.Column="1"
                         HorizontalAlignment="Left"
                         Content="Преобразование .png и .gif в .jpg" />
-
                     <TextBlock Grid.Column="2" Text="Удалять оригиналы" />
                     <CheckBox
                         Grid.Column="3"
@@ -125,7 +117,6 @@
                     </CheckBox>
                 </Grid>
             </Border>
-
             <!--  сжатие  -->
             <Border Grid.Row="1" Style="{StaticResource SectionBorderStyle}">
                 <Grid>
@@ -147,13 +138,11 @@
                         Style="{StaticResource ImageButtonStyle}">
                         <icons:PackIconFontAwesome Kind="BoxArchiveSolid" Style="{StaticResource BigIconSize}" />
                     </Button>
-
                     <Label
                         Grid.Row="0"
                         Grid.RowSpan="2"
                         Grid.Column="1"
                         Content="Сжатие изображений" />
-
                     <TextBlock
                         Grid.Row="0"
                         Grid.Column="2"
@@ -166,7 +155,6 @@
                         HorizontalAlignment="Right"
                         DockPanel.Dock="Top"
                         Text="{Binding CompressParameters.SelectedQuality, StringFormat='Качество сжатия: {0:N0}%'}" />
-
                     <TextBox
                         Grid.Row="0"
                         Grid.Column="3"
@@ -178,12 +166,8 @@
                         Maximum="100"
                         Minimum="50"
                         Value="{Binding CompressParameters.SelectedQuality}" />
-
-
-
                 </Grid>
             </Border>
-
             <!--  изменение размера  -->
             <Border Grid.Row="2" Style="{StaticResource SectionBorderStyle}">
                 <Grid>
@@ -199,7 +183,6 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" SharedSizeGroup="valuesColumn" />
                     </Grid.ColumnDefinitions>
-
                     <Button
                         Grid.Row="0"
                         Grid.RowSpan="3"
@@ -209,14 +192,12 @@
                         Style="{StaticResource ImageButtonStyle}">
                         <icons:PackIconFontAwesome Kind="CompressSolid" Style="{StaticResource BigIconSize}" />
                     </Button>
-
                     <Label
                         Grid.Row="0"
                         Grid.RowSpan="3"
                         Grid.Column="1"
                         VerticalAlignment="Center"
                         Content="Изменить разрешение" />
-
                     <TextBlock
                         Grid.Row="0"
                         Grid.Column="2"
@@ -227,7 +208,6 @@
                         Grid.Column="2"
                         HorizontalAlignment="Right"
                         Text="Высота" />
-
                     <TextBox
                         Grid.Row="0"
                         Grid.Column="3"
@@ -236,13 +216,11 @@
                         Grid.Row="1"
                         Grid.Column="3"
                         Text="{Binding CompressParameters.ResizeHeight, UpdateSourceTrigger=PropertyChanged}" />
-
                     <TextBlock
                         Grid.Row="2"
                         Grid.Column="2"
                         HorizontalAlignment="Right"
                         Text="Удалять предыдущие" />
-
                     <CheckBox
                         Grid.Row="2"
                         Grid.Column="3"
@@ -254,13 +232,11 @@
                             <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
                         </CheckBox.LayoutTransform>
                     </CheckBox>
-
                     <TextBlock
     Grid.Row="3"
     Grid.Column="2"
     HorizontalAlignment="Right"
     Text="Растягивать" />
-
                     <CheckBox
     Grid.Row="3"
     Grid.Column="3"
@@ -272,10 +248,8 @@
                             <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
                         </CheckBox.LayoutTransform>
                     </CheckBox>
-
                 </Grid>
             </Border>
-
             <!--  удаление водяного знака  -->
             <Border Grid.Row="3" Style="{StaticResource SectionBorderStyle}">
                 <Grid>
@@ -289,7 +263,6 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" SharedSizeGroup="valuesColumn" />
                     </Grid.ColumnDefinitions>
-
                     <Button
                         Grid.Row="0"
                         Grid.RowSpan="2"
@@ -299,14 +272,12 @@
                         ToolTip="Закрашивает прямоугольник указанного размера в **правом нижнем углу** каждого изображения">
                         <icons:PackIconFontAwesome Kind="StampSolid" Style="{StaticResource BigIconSize}" />
                     </Button>
-
                     <Label
                         Grid.Row="0"
                         Grid.RowSpan="2"
                         Grid.Column="1">
                         Закрасить водяные знаки
                     </Label>
-
                     <TextBlock
                         Grid.Row="0"
                         Grid.Column="2"
@@ -317,7 +288,6 @@
                         Grid.Column="2"
                         HorizontalAlignment="Right"
                         Text="Высота" />
-
                     <TextBox
                         Grid.Row="0"
                         Grid.Column="3"
@@ -326,8 +296,6 @@
                         Grid.Row="1"
                         Grid.Column="3"
                         Text="{Binding CompressParameters.WatermarkHeight, UpdateSourceTrigger=PropertyChanged}" />
-
-
                 </Grid>
             </Border>
         </Grid>

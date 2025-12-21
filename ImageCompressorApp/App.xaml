@@ -7,19 +7,15 @@
     xmlns:local="clr-namespace:ImageCompressorApp">
     <Application.Resources>
         <con:GreaterThanZeroToVisibilityConverter x:Key="GreaterThanZeroToVisibilityConverter" />
-
         <Style x:Key="MediumIconSize" TargetType="{x:Type icons:PackIconFontAwesome}">
             <Setter Property="Width" Value="24" />
             <Setter Property="Height" Value="24" />
         </Style>
-
         <Style x:Key="BigIconSize" TargetType="{x:Type icons:PackIconFontAwesome}">
             <Setter Property="Width" Value="42" />
             <Setter Property="Height" Value="42" />
         </Style>
-
         <SolidColorBrush x:Key="SectionCaptionBrush" Color="#1A79DC" />
-
         <Style TargetType="Label">
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="VerticalAlignment" Value="Center" />
@@ -28,7 +24,6 @@
             <Setter Property="FontSize" Value="12" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
-
         <Style TargetType="TextBox">
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -37,17 +32,14 @@
             <Setter Property="Height" Value="24" />
             <Setter Property="Background" Value="#80ffffff" />
             <Setter Property="BorderBrush" Value="Transparent" />
-
             <Setter Property="Foreground" Value="{StaticResource SectionCaptionBrush}" />
         </Style>
-
         <Style TargetType="TextBlock">
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Margin" Value="4,2,8,2" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="Foreground" Value="{StaticResource SectionCaptionBrush}" />
         </Style>
-
         <Style x:Key="SectionBorderStyle" TargetType="Border">
             <Setter Property="BorderThickness" Value="2" />
             <Setter Property="BorderBrush" Value="#A8AEDC" />
@@ -55,7 +47,6 @@
             <Setter Property="Padding" Value="4" />
             <Setter Property="CornerRadius" Value="4" />
         </Style>
-
         <Style x:Key="ImageButtonStyle" TargetType="Button">
             <Setter Property="Foreground" Value="RoyalBlue" />
             <Setter Property="Cursor" Value="Hand" />
