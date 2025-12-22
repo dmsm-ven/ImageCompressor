@@ -55,18 +55,22 @@ public class ImageSharpProcessor : IImageProcessor
         {
             using Image image = Image.Load(filePath);
 
-            image.Mutate(x => x.Resize(new ResizeOptions
+            image.Mutate(x =>
             {
-                Size = new Size(size.Width, size.Height),
-                Mode = resizeMode switch
+                x.BackgroundColor(Color.White);
+                x.Resize(new ResizeOptions
                 {
-                    ResizeModeOptions.Stretch => SixLabors.ImageSharp.Processing.ResizeMode.Stretch,
-                    ResizeModeOptions.BoxPad => SixLabors.ImageSharp.Processing.ResizeMode.BoxPad,
-                    _ => SixLabors.ImageSharp.Processing.ResizeMode.Max
-                },
-                Sampler = KnownResamplers.Lanczos3
-            }));
-
+                    Size = new Size(size.Width, size.Height),
+                    PadColor = Color.White,
+                    Mode = resizeMode switch
+                    {
+                        ResizeModeOptions.Stretch => SixLabors.ImageSharp.Processing.ResizeMode.Stretch,
+                        ResizeModeOptions.BoxPad => SixLabors.ImageSharp.Processing.ResizeMode.BoxPad,
+                        _ => SixLabors.ImageSharp.Processing.ResizeMode.Max
+                    },
+                    Sampler = KnownResamplers.Lanczos3
+                });
+            });
             await image.SaveAsync(filePath, GetJpegEncoder());
         }
         catch

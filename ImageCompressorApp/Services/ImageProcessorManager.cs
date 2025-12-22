@@ -66,7 +66,7 @@ public class ImageProcessorManager
         InitializeSemaphore();
 
         var allowedExtensions = new[] { ".webp", ".png", ".avif", ".jpeg" };
-        var files = Directory.GetFiles(folder)
+        var files = Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories)
             .Where(f => allowedExtensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
             .ToArray();
 

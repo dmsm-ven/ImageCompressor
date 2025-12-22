@@ -3,12 +3,16 @@ using CommunityToolkit.Mvvm.Input;
 using ImageCompressorApp.Models;
 using ImageCompressorApp.Services;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 namespace ImageCompressorApp.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject
 {
+    public static readonly string LOG_FILE_NAME = "log.txt";
+    public static string LOG_FILE_FULL_PATH => Path.Combine(Path.GetDirectoryName(typeof(App).Assembly.Location), LOG_FILE_NAME);
+
     public static readonly int DEFAULT_THREADS_LIMIT = 4;
     //private readonly ImageMultiCompressor compressor;
     private readonly ImageProcessorManager imageManager;
@@ -33,7 +37,11 @@ public partial class MainWindowViewModel : ObservableObject
     {
         this.imageManager = imageManager;
         imageManager.ThreadsLimit = DEFAULT_THREADS_LIMIT;
-        imageManager.OnError += (error) => App.Current.Dispatcher.Invoke(() => Log.Add(error));
+        imageManager.OnError += (error) =>
+        {
+            File.AppendAllLines(LOG_FILE_NAME, new string[] { $"{DateTime.Now} | {error}" });
+            App.Current.Dispatcher.Invoke(() => Log.Add(error));
+        };
         imageManager.OnLimitExceededResolver += (folder, filesCount) =>
         {
             var res = MessageBox.Show($"В папке {folder} находится {filesCount} файлов которые будут обработаны. \r\nВы действительно хотите выполнить команду ?",
@@ -63,66 +71,37 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(IsWorkingDirectoryExists))]
     private async Task ConvertImages()
     {
-        Log.Clear();
-        try
+        await ExecuteLoggedAction(async () =>
         {
-            InProgress = true;
             await imageManager.ConvertImagesToJpg(WorkingFolder,
                 CompressParameters.IsDeleteFilesAfterCompress,
                 CreateIndicatorCallback(OperationType.ConvertToJpg));
             Title = $"Конвертация в JPG выполнена";
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show(ex.Message + "\r\n\r\n" + ex.StackTrace, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        finally
-        {
-            InProgress = false;
-        }
+        });
     }
     [RelayCommand(CanExecute = nameof(IsWorkingDirectoryExists))]
     private async Task ResizeImages()
     {
-        Log.Clear();
-        InProgress = true;
-        try
+        await ExecuteLoggedAction(async () =>
         {
             await imageManager.ResizeImages(WorkingFolder,
                 new ImageSize(CompressParameters.ResizeWidth, CompressParameters.ResizeHeight),
                 CompressParameters.SelectedResizeMode,
                 CreateIndicatorCallback(OperationType.Resize));
             Title = $"Обработчик изображений | изменение размеров выполнено";
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show(ex.Message + "\r\n\r\n" + ex.StackTrace, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        finally
-        {
-            InProgress = false;
-        }
+        });
     }
     [RelayCommand(CanExecute = nameof(IsWorkingDirectoryExists))]
     private async Task CompressImages()
     {
-        InProgress = true;
-        try
+        await ExecuteLoggedAction(async () =>
         {
             imageManager.MinimumImageSizeToResizeInKb = CompressParameters.MinimumSizeToCompressInKb;
             await imageManager.CompressImages(WorkingFolder,
                 CompressParameters.SelectedQuality,
                 CreateIndicatorCallback(OperationType.Compress));
             Title = $"Сжатие изображений выполнено";
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show(ex.Message + "\r\n\r\n" + ex.StackTrace, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        finally
-        {
-            InProgress = false;
-        }
+        });
     }
     [RelayCommand(CanExecute = nameof(CanCopyErrorsTextCommand))]
     private void CopyErrorsText() => Clipboard.SetText(string.Join(Environment.NewLine, Log));
@@ -140,5 +119,33 @@ public partial class MainWindowViewModel : ObservableObject
             ProgressStatus = v;
             Title = $"Выполнение операции {operationMessage}: {v.Current} / {v.Total} ({v.Percent:P0})";
         });
+    }
+
+    private async Task ExecuteLoggedAction(Action action)
+    {
+        Log.Clear();
+        if (File.Exists(LOG_FILE_FULL_PATH))
+        {
+            File.Delete(LOG_FILE_FULL_PATH);
+        }
+
+        try
+        {
+            InProgress = true;
+            action();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message + "\r\n\r\n" + ex.StackTrace, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            InProgress = false;
+            if (Log.Count > 0)
+            {
+                MessageBox.Show("При выполнении операций были ошибка\r\nОткрыть лог файл", "Информация", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Process.Start("explorer.exe", $"/select,\"{LOG_FILE_FULL_PATH}\"");
+            }
+        }
     }
 }
