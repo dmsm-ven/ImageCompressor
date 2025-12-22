@@ -1,32 +1,9 @@
-﻿using ImageCompressorApp.Models;
-using ImageProcessor;
-using ImageProcessor.Imaging;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
-using System.Text.RegularExpressions;
-using Encoder = System.Drawing.Imaging.Encoder;
-namespace ImageCompressorApp.Services;
+﻿namespace ImageCompressorApp.Services;
 
-public interface IImageProcessor
-{
-    event Action<string> OnError;
-    event Func<string, int, bool> OnLimitWarning;
-    void CompressImage(string imageFilePath, long qualityLevel);
-    Task CompressImages(string workingFolder, long qualityLevel, int minimumSizeInKb, IProgress<CompressProgressStatus>? indicator = null);
-    Task<int> DeletePreviusResizedImages();
-    Task ResizeImages(string workingFolder, ImageSize newSize, ResizeMode resizeMode, IProgress<CompressProgressStatus>? indicator = null, int threads = 1);
-    Task SaveAllAsJpg(string workingFolder, bool removeOriginalFiles, IProgress<CompressProgressStatus>? indicator = null);
-}
+/*
 public class ImageMultiCompressor : IImageProcessor
 {
-    public const int WARNING_FILES_MIN_COUNT = 1000;
-    private static readonly object lockObject = new();
-    private readonly List<string> lastResiedImages = new();
-    public event Action<string> OnError;
-    public event Func<string, int, bool> OnLimitWarning;
-    public async Task CompressImages(string workingFolder, long qualityLevel, int minimumSizeInKb, IProgress<CompressProgressStatus> indicator)
+    public async Task CompressImages(string workingFolder, long qualityLevel, int minimumSizeInKb, IProgress<ProgressStatus> indicator)
     {
         string[] valid_extensions = new string[2] { ".jpg", ".jpeg" };
         var images = Directory.GetFiles(workingFolder)
@@ -51,7 +28,7 @@ public class ImageMultiCompressor : IImageProcessor
             {
                 OnError?.Invoke(ex.Message + $" ({image})");
             }
-            indicator?.Report(new CompressProgressStatus(++current, total));
+            indicator?.Report(new ProgressStatus(++current, total));
         }
     }
     public void CompressImage(string imageFilePath, long qualityLevel)
@@ -70,7 +47,7 @@ public class ImageMultiCompressor : IImageProcessor
         File.Delete(imageFilePath);
         File.Move(tempImage, imageFilePath);
     }
-    public async Task SaveAllAsJpg(string workingFolder, bool removeOriginalFiles, IProgress<CompressProgressStatus> indicator)
+    public async Task SaveAllAsJpg(string workingFolder, bool removeOriginalFiles, IProgress<ProgressStatus> indicator)
     {
         var images = Directory
             .GetFiles(workingFolder, "*.*", SearchOption.AllDirectories)
@@ -102,7 +79,7 @@ public class ImageMultiCompressor : IImageProcessor
             {
                 OnError?.Invoke(ex.Message + $" ({file})");
             }
-            indicator?.Report(new CompressProgressStatus(++current, total));
+            indicator?.Report(new ProgressStatus(++current, total));
         }
     }
     private void ConvertToJpg(string sourceFile, bool removeOriginalFiles)
@@ -139,7 +116,6 @@ public class ImageMultiCompressor : IImageProcessor
         }
     }
 
-
     private static bool ConvertToJpgBasicMethod(string sourceFile)
     {
         string newPath = Path.Combine(Path.GetDirectoryName(sourceFile), Path.GetFileNameWithoutExtension(sourceFile)) + ".jpg";
@@ -160,7 +136,7 @@ public class ImageMultiCompressor : IImageProcessor
     public async Task ResizeImages(string workingFolder,
 ImageSize newSize,
 ResizeMode resizeMode,
-IProgress<CompressProgressStatus> indicator = null, int threads = 2)
+IProgress<ProgressStatus> indicator = null, int threads = 2)
     {
         if (threads <= 0 || threads > (Environment.ProcessorCount * 3))
         {
@@ -193,7 +169,7 @@ IProgress<CompressProgressStatus> indicator = null, int threads = 2)
             await Task.WhenAll(tasks);
         }
     }
-    public async Task ResizeImages(string workingFolder, ImageSize newSize, ResizeMode resizeMode, IProgress<CompressProgressStatus> indicator)
+    public async Task ResizeImages(string workingFolder, ImageSize newSize, ResizeMode resizeMode, IProgress<ProgressStatus> indicator)
     {
         var images = Directory.GetFiles(workingFolder, "*.*", SearchOption.AllDirectories).ToArray();
         int total = images.Count();
@@ -286,3 +262,4 @@ IProgress<CompressProgressStatus> indicator = null, int threads = 2)
         return totalDeleted;
     }
 }
+*/

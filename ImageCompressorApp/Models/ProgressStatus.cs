@@ -1,5 +1,6 @@
 ﻿namespace ImageCompressorApp.Models;
-public struct CompressProgressStatus
+
+public struct ProgressStatus
 {
     public int Current { get; init; }
     public int Total { get; init; }
@@ -11,7 +12,7 @@ public struct CompressProgressStatus
             return Total > 0 ? (double)((double)Current / Total) : 0.00d;
         }
     }
-    public CompressProgressStatus(int current, int total)
+    public ProgressStatus(int current, int total)
     {
         Current = current;
         Total = total;

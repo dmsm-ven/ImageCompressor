@@ -1,4 +1,5 @@
-﻿using ImageCompressorApp.Services;
+﻿using ImageCompressorApp.Interfaces;
+using ImageCompressorApp.Services;
 using ImageCompressorApp.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,7 +19,8 @@ public partial class App : Application
             .CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
-                services.AddSingleton<IImageProcessor, ImageMultiCompressor>();
+                services.AddSingleton<IImageProcessor, ImageSharpProcessor>();
+                services.AddSingleton<ImageProcessorManager>();
                 services.AddSingleton<MainWindowViewModel>();
             })
             .Build();

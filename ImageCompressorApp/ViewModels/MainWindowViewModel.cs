@@ -6,10 +6,12 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 namespace ImageCompressorApp.ViewModels;
+
 public partial class MainWindowViewModel : ObservableObject
 {
+    public static readonly int DEFAULT_THREADS_LIMIT = 8;
     //private readonly ImageMultiCompressor compressor;
-    private readonly IImageProcessor imageProcessor;
+    private readonly ImageProcessorManager imageManager;
     [ObservableProperty]
     public ObservableCollection<string> log = new();
     [ObservableProperty]
@@ -19,19 +21,21 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     public CompressParametersViewodel compressParameters = new();
     [ObservableProperty]
-    public CompressProgressStatus progressStatus = new(0, 0);
+    public ProgressStatus progressStatus = new(0, 0);
+
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(WorkingDirectoryExists))]
-    [NotifyCanExecuteChangedFor(nameof(CompressImagesCommand))]
-    [NotifyCanExecuteChangedFor(nameof(ResizeImagesCommand))]
-    [NotifyCanExecuteChangedFor(nameof(ConvertImagesCommand))]
+    [NotifyPropertyChangedFor(nameof(IsWorkingDirectoryExists))]
+    [NotifyCanExecuteChangedFor(nameof(ConvertImagesCommand), nameof(ResizeImagesCommand), nameof(CompressImagesCommand))]
     public string workingFolder = "";
-    public MainWindowViewModel(IImageProcessor imageProcessor)
+    public bool IsWorkingDirectoryExists => Directory.Exists(WorkingFolder);
+    public bool CanCopyErrorsTextCommand() => Log.Any();
+    public MainWindowViewModel(ImageProcessorManager imageManager)
     {
-        this.imageProcessor = imageProcessor;
+        this.imageManager = imageManager;
+        imageManager.ThreadsLimit = DEFAULT_THREADS_LIMIT;
         Log.CollectionChanged += (o, e) => OnPropertyChanged(nameof(CanCopyErrorsTextCommand));
-        imageProcessor.OnError += (error) => App.Current.Dispatcher.Invoke(() => Log.Add(error));
-        imageProcessor.OnLimitWarning += (folder, filesCount) =>
+        imageManager.OnError += (error) => App.Current.Dispatcher.Invoke(() => Log.Add(error));
+        imageManager.OnLimitExceededResolver += (folder, filesCount) =>
         {
             var res = MessageBox.Show($"В папке {folder} находится {filesCount} файлов которые будут обработаны. \r\nВы действительно хотите выполнить команду ?",
                "Внимание",
@@ -40,7 +44,7 @@ public partial class MainWindowViewModel : ObservableObject
             return res == MessageBoxResult.Yes;
         };
     }
-    public bool WorkingDirectoryExists => Directory.Exists(WorkingFolder);
+
     [RelayCommand]
     private void SelectDownloadFolder()
     {
@@ -56,80 +60,64 @@ public partial class MainWindowViewModel : ObservableObject
             WorkingFolder = ofd.FolderName;
         }
     }
-    [RelayCommand(CanExecute = nameof(WorkingDirectoryExists))]
-    private void EraseWatermakrs()
-    {
-        //MessageBox.Show("Not implemented");
-    }
-    [RelayCommand(CanExecute = nameof(WorkingDirectoryExists))]
+    [RelayCommand(CanExecute = nameof(IsWorkingDirectoryExists))]
     private async Task ConvertImages()
     {
         Log.Clear();
         try
         {
             InProgress = true;
-            await imageProcessor.SaveAllAsJpg(WorkingFolder, CompressParameters.IsDeleteFilesAfterCompress, CreateIndicatorCallback());
+            await imageManager.ConvertImagesToJpg(WorkingFolder,
+                CompressParameters.IsDeleteFilesAfterCompress,
+                CreateIndicatorCallback(OperationType.ConvertToJpg));
             Title = $"Конвертация в JPG выполнена";
         }
         catch (Exception ex)
         {
-            Title = ex.Message + "\r\n\r\n" + ex.StackTrace;
+            MessageBox.Show(ex.Message + "\r\n\r\n" + ex.StackTrace, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
             InProgress = false;
         }
     }
-    [RelayCommand(CanExecute = nameof(WorkingDirectoryExists))]
+    [RelayCommand(CanExecute = nameof(IsWorkingDirectoryExists))]
     private async Task ResizeImages()
     {
         Log.Clear();
         InProgress = true;
         try
         {
-            int? deleted = null;
-            if (CompressParameters.IsDeletePreviusResizedImages)
-            {
-                deleted = await imageProcessor.DeletePreviusResizedImages();
-            }
-            if (CompressParameters.ResizeWidth > 32 && CompressParameters.ResizeHeight > 32)
-            {
-                await imageProcessor.ResizeImages(WorkingFolder,
-                    new ImageSize(CompressParameters.ResizeWidth, CompressParameters.ResizeHeight),
-                    CompressParameters.SelectedResizeMode,
-                    CreateIndicatorCallback(),
-                    threads: 8);
-                Title = $"Обработчик изображений | изменение размеров выполнено";
-                if (deleted.HasValue && deleted.Value > 0)
-                {
-                    Title += $" | удалено {deleted.Value} изображений";
-                }
-            }
+            await imageManager.ResizeImages(WorkingFolder,
+                new ImageSize(CompressParameters.ResizeWidth, CompressParameters.ResizeHeight),
+                CompressParameters.SelectedResizeMode,
+                CreateIndicatorCallback(OperationType.Resize));
+            Title = $"Обработчик изображений | изменение размеров выполнено";
         }
         catch (Exception ex)
         {
-            Title = ex.Message + "\r\n\r\n" + ex.StackTrace;
+            MessageBox.Show(ex.Message + "\r\n\r\n" + ex.StackTrace, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
             InProgress = false;
         }
     }
-    [RelayCommand(CanExecute = nameof(WorkingDirectoryExists))]
+    [RelayCommand(CanExecute = nameof(IsWorkingDirectoryExists))]
     private async Task CompressImages()
     {
         InProgress = true;
         try
         {
-            await imageProcessor.CompressImages(WorkingFolder,
+            imageManager.MinimumImageSizeToResizeInKb = CompressParameters.MinimumSizeToCompressInKb;
+            await imageManager.CompressImages(WorkingFolder,
                 CompressParameters.SelectedQuality,
-                CompressParameters.MinimumSizeToCompressInKb,
-                CreateIndicatorCallback());
+                CreateIndicatorCallback(OperationType.Compress));
             Title = $"Сжатие изображений выполнено";
         }
         catch (Exception ex)
         {
-            Title = ex.Message + "\r\n\r\n" + ex.StackTrace;
+            MessageBox.Show(ex.Message + "\r\n\r\n" + ex.StackTrace, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -137,17 +125,20 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
     [RelayCommand(CanExecute = nameof(CanCopyErrorsTextCommand))]
-    private void CopyErrorsText()
+    private void CopyErrorsText() => Clipboard.SetText(string.Join(Environment.NewLine, Log));
+    private IProgress<ProgressStatus> CreateIndicatorCallback(OperationType operation)
     {
-        Clipboard.SetText(string.Join(Environment.NewLine, Log));
-    }
-    private bool CanCopyErrorsTextCommand() => Log.Any();
-    public IProgress<CompressProgressStatus> CreateIndicatorCallback()
-    {
-        return new Progress<CompressProgressStatus>((v) =>
+        string operationMessage = operation switch
+        {
+            OperationType.ConvertToJpg => "по преобразованию в JPG",
+            OperationType.Resize => "по изменения размера изображений",
+            OperationType.Compress => "по сжатию изображений",
+            _ => throw new NotSupportedException()
+        };
+        return new Progress<ProgressStatus>((v) =>
         {
             ProgressStatus = v;
-            Title = $"Выполнение операции: {v.Current} / {v.Total} ({v.Percent:P0})";
+            Title = $"Выполнение операции {operationMessage}: {v.Current} / {v.Total} ({v.Percent:P0})";
         });
     }
 }

@@ -10,7 +10,7 @@
     Title="{Binding Title}"
     Icon="/image_converter_icon.ico"
     Width="640"
-    Height="392"
+    Height="345"
     MinWidth="600"
     d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel,
                                      IsDesignTimeCreatable=False}"
@@ -54,7 +54,6 @@
                 HorizontalContentAlignment="Left"
                 d:Text="C:\\Windows\Users\user\desktop"
                 BorderBrush="LightGray"
-                IsReadOnly="True"
                 FontSize="14"
                 Foreground="#7A6565"
                 Text="{Binding WorkingFolder}" />
@@ -80,7 +79,6 @@
             Margin="0,69,0,0"
             Grid.IsSharedSizeScope="True">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -250,54 +248,7 @@
                     </CheckBox>
                 </Grid>
             </Border>
-            <!--  удаление водяного знака  -->
-            <Border Grid.Row="3" Style="{StaticResource SectionBorderStyle}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" SharedSizeGroup="valuesColumn" />
-                    </Grid.ColumnDefinitions>
-                    <Button
-                        Grid.Row="0"
-                        Grid.RowSpan="2"
-                        Grid.Column="0"
-                        Command="{Binding EraseWatermarksCommand}"
-                        Style="{StaticResource ImageButtonStyle}"
-                        ToolTip="Закрашивает прямоугольник указанного размера в **правом нижнем углу** каждого изображения">
-                        <icons:PackIconFontAwesome Kind="StampSolid" Style="{StaticResource BigIconSize}" />
-                    </Button>
-                    <Label
-                        Grid.Row="0"
-                        Grid.RowSpan="2"
-                        Grid.Column="1">
-                        Закрасить водяные знаки
-                    </Label>
-                    <TextBlock
-                        Grid.Row="0"
-                        Grid.Column="2"
-                        HorizontalAlignment="Right"
-                        Text="Ширина" />
-                    <TextBlock
-                        Grid.Row="1"
-                        Grid.Column="2"
-                        HorizontalAlignment="Right"
-                        Text="Высота" />
-                    <TextBox
-                        Grid.Row="0"
-                        Grid.Column="3"
-                        Text="{Binding CompressParameters.WatermarkWidth, UpdateSourceTrigger=PropertyChanged}" />
-                    <TextBox
-                        Grid.Row="1"
-                        Grid.Column="3"
-                        Text="{Binding CompressParameters.WatermarkHeight, UpdateSourceTrigger=PropertyChanged}" />
-                </Grid>
-            </Border>
+           
         </Grid>
     </Grid>
 </Window>
