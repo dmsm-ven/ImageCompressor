@@ -7,7 +7,6 @@ namespace ImageCompressorApp.Services;
 
 public class ImageProcessorManager
 {
-    private static readonly object lockObject = new();
     public event Action<string>? OnError;
     public event Func<string, int, bool>? OnLimitExceededResolver;
     public int MinimumFilesCountToResolveRequire { get; set; } = 1000;
@@ -17,6 +16,7 @@ public class ImageProcessorManager
 
     private readonly IImageProcessor processor;
     private readonly List<string> lastResiedImages = new();
+    private SemaphoreSlim semaphore;
 
     public ImageProcessorManager(IImageProcessor processor)
     {
@@ -25,54 +25,48 @@ public class ImageProcessorManager
     public async Task ResizeImages(string folder, ImageSize size, ResizeModeOptions mode = ResizeModeOptions.Stretch, IProgress<ProgressStatus>? indicator = null)
     {
         if (!IsFilesCountCheckSuccess(folder)) { return; }
+        InitializeSemaphore();
+
         var files = Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories);
         int total = files.Count();
-        int current = 0;
+        int currentOperationProgress = 0;
 
-        foreach (var image in files)
-        {
-            try
-            {
-                await processor.ResizeImageAsync(image, size, mode);
-                lastResiedImages.Add(image);
-            }
-            catch (Exception ex)
-            {
-                OnError?.Invoke($"Error resizing image '{image}': {ex.Message}");
-            }
+        if (total == 0) { return; }
 
-            indicator?.Report(new(++current, total));
-        }
+        var tasks = files
+            .Select(image => ResizeSingleImageAsync(size, mode, image).ContinueWith((t) =>
+            {
+                int current = Interlocked.Increment(ref currentOperationProgress);
+                indicator?.Report(new(current, total));
+            }));
+
+        await Task.WhenAll(tasks.ToArray());
 
         await DeleteLastResizedImagesIfNeed();
     }
     public async Task CompressImages(string folder, long quality = 100, IProgress<ProgressStatus>? indicator = null)
     {
+        InitializeSemaphore();
+
         var files = Directory.GetFiles(folder, "*.jpg", SearchOption.AllDirectories);
         int total = files.Count();
         int current = 0;
 
-        foreach (var image in files)
-        {
-            FileInfo fi = new(image);
-            int fileSizeInKb = (int)(fi.Length / 1024);
+        if (total == 0) { return; }
 
-            try
+        var tasks = files
+            .Select(image => CompressSingleImageAsync(quality, image).ContinueWith((t) =>
             {
-                if (fileSizeInKb >= MinimumImageSizeToResizeInKb)
-                {
-                    await processor.CompressImageAsync(image, quality);
-                }
-            }
-            catch (Exception ex)
-            {
-                OnError?.Invoke($"Error compress image '{image}': {ex.Message}");
-            }
-            indicator?.Report(new(++current, total));
-        }
+                int curr = Interlocked.Increment(ref current);
+                indicator?.Report(new(curr, total));
+            }));
+
+        await Task.WhenAll(tasks.ToArray());
     }
     public async Task ConvertImagesToJpg(string folder, bool deleteOriginal = false, IProgress<ProgressStatus>? indicator = null)
     {
+        InitializeSemaphore();
+
         var allowedExtensions = new[] { ".webp", ".png", ".avif", ".jpeg" };
         var files = Directory.GetFiles(folder)
             .Where(f => allowedExtensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
@@ -81,30 +75,71 @@ public class ImageProcessorManager
         int total = files.Count();
         int current = 0;
 
-        foreach (var image in files)
+        if (total == 0) { return; }
+
+        var tasks = files
+            .Select(image => ConvertSingleImageToJpg(deleteOriginal, image).ContinueWith((t) =>
+            {
+                int curr = Interlocked.Increment(ref current);
+                indicator?.Report(new(curr, total));
+            }));
+
+        await Task.WhenAll(tasks.ToArray());
+    }
+    private async Task ResizeSingleImageAsync(ImageSize size, ResizeModeOptions mode, string image)
+    {
+        await semaphore.WaitAsync();
+
+        try
         {
-            if (Path.GetExtension(image).ToLower() == ".jpeg")
-            {
-                File.Move(image, Path.ChangeExtension(image, ".jpg"));
-            }
-            else
-            {
-                try
-                {
-                    string convertedImage = await processor.ConvertToJpgAsync(image);
-                }
-                catch (Exception ex)
-                {
-                    OnError?.Invoke($"Error compress image '{image}': {ex.Message}");
-                }
-            }
+            await processor.ResizeImageAsync(image, size, mode);
+            lastResiedImages.Add(image);
+        }
+        catch (Exception ex)
+        {
+            OnError?.Invoke($"Error resizing image '{image}': {ex.Message}");
+        }
 
-            if (deleteOriginal && File.Exists(image))
-            {
-                File.Delete(image);
-            }
+        semaphore.Release();
+    }
+    private async Task CompressSingleImageAsync(long quality, string image)
+    {
+        FileInfo fi = new(image);
+        int fileSizeInKb = (int)(fi.Length / 1024);
 
-            indicator?.Report(new(++current, total));
+        try
+        {
+            if (fileSizeInKb >= MinimumImageSizeToResizeInKb)
+            {
+                await processor.CompressImageAsync(image, quality);
+            }
+        }
+        catch (Exception ex)
+        {
+            OnError?.Invoke($"Error compress image '{image}': {ex.Message}");
+        }
+    }
+    private async Task ConvertSingleImageToJpg(bool deleteOriginal, string image)
+    {
+        if (Path.GetExtension(image).ToLower() == ".jpeg")
+        {
+            File.Move(image, Path.ChangeExtension(image, ".jpg"));
+        }
+        else
+        {
+            try
+            {
+                string convertedImage = await processor.ConvertToJpgAsync(image);
+            }
+            catch (Exception ex)
+            {
+                OnError?.Invoke($"Error compress image '{image}': {ex.Message}");
+            }
+        }
+
+        if (deleteOriginal && File.Exists(image))
+        {
+            File.Delete(image);
         }
     }
     private bool IsFilesCountCheckSuccess(string folder)
@@ -136,5 +171,10 @@ public class ImageProcessorManager
                 OnError?.Invoke($"Error deleting previous resized image '{img}': {ex.Message}");
             }
         }
+    }
+    private void InitializeSemaphore()
+    {
+        semaphore?.Dispose();
+        semaphore = new SemaphoreSlim(ThreadsLimit, ThreadsLimit);
     }
 }
