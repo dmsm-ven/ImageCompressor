@@ -9,7 +9,7 @@ namespace ImageCompressorApp.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject
 {
-    public static readonly int DEFAULT_THREADS_LIMIT = 8;
+    public static readonly int DEFAULT_THREADS_LIMIT = 4;
     //private readonly ImageMultiCompressor compressor;
     private readonly ImageProcessorManager imageManager;
     [ObservableProperty]
@@ -33,7 +33,6 @@ public partial class MainWindowViewModel : ObservableObject
     {
         this.imageManager = imageManager;
         imageManager.ThreadsLimit = DEFAULT_THREADS_LIMIT;
-        Log.CollectionChanged += (o, e) => OnPropertyChanged(nameof(CanCopyErrorsTextCommand));
         imageManager.OnError += (error) => App.Current.Dispatcher.Invoke(() => Log.Add(error));
         imageManager.OnLimitExceededResolver += (folder, filesCount) =>
         {
@@ -43,6 +42,7 @@ public partial class MainWindowViewModel : ObservableObject
                MessageBoxImage.Warning);
             return res == MessageBoxResult.Yes;
         };
+        Log.CollectionChanged += (o, e) => OnPropertyChanged(nameof(CanCopyErrorsTextCommand));
     }
 
     [RelayCommand]

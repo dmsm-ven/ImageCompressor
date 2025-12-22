@@ -1,5 +1,6 @@
 ﻿using ImageCompressorApp.Interfaces;
 using ImageCompressorApp.Models;
+using System.Collections.Concurrent;
 using System.IO;
 
 namespace ImageCompressorApp.Services;
@@ -9,13 +10,18 @@ public class ImageProcessorManager
 {
     public event Action<string>? OnError;
     public event Func<string, int, bool>? OnLimitExceededResolver;
+    public TimeSpan MULTITHREAD_REPORT_DELAY { get; } = TimeSpan.FromMilliseconds(25);
     public int MinimumFilesCountToResolveRequire { get; set; } = 1000;
     public bool IsDeletePreviuosResizedImages { get; set; } = false;
     public long MinimumImageSizeToResizeInKb { get; set; } = 0;
     public int ThreadsLimit { get; set; } = 1;
 
+    private int currentOperationProgress = 0;
+    private int currentOperationTotal = 0;
+    private IProgress<ProgressStatus>? currentOperationIndicator = null;
+
     private readonly IImageProcessor processor;
-    private readonly List<string> lastResiedImages = new();
+    private readonly ConcurrentBag<string> lastResiedImages = new();
     private SemaphoreSlim semaphore;
 
     public ImageProcessorManager(IImageProcessor processor)
@@ -28,17 +34,13 @@ public class ImageProcessorManager
         InitializeSemaphore();
 
         var files = Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories);
-        int total = files.Count();
-        int currentOperationProgress = 0;
+        currentOperationTotal = files.Count();
+        currentOperationProgress = 0;
+        currentOperationIndicator = indicator;
 
-        if (total == 0) { return; }
+        if (currentOperationTotal == 0) { return; }
 
-        var tasks = files
-            .Select(image => ResizeSingleImageAsync(size, mode, image).ContinueWith((t) =>
-            {
-                int current = Interlocked.Increment(ref currentOperationProgress);
-                indicator?.Report(new(current, total));
-            }));
+        var tasks = files.Select(image => ResizeSingleImageAsync(image, size, mode));
 
         await Task.WhenAll(tasks.ToArray());
 
@@ -49,17 +51,13 @@ public class ImageProcessorManager
         InitializeSemaphore();
 
         var files = Directory.GetFiles(folder, "*.jpg", SearchOption.AllDirectories);
-        int total = files.Count();
-        int current = 0;
+        currentOperationTotal = files.Count();
+        currentOperationProgress = 0;
+        currentOperationIndicator = indicator;
 
-        if (total == 0) { return; }
+        if (currentOperationTotal == 0) { return; }
 
-        var tasks = files
-            .Select(image => CompressSingleImageAsync(quality, image).ContinueWith((t) =>
-            {
-                int curr = Interlocked.Increment(ref current);
-                indicator?.Report(new(curr, total));
-            }));
+        var tasks = files.Select(image => CompressSingleImageAsync(image, quality));
 
         await Task.WhenAll(tasks.ToArray());
     }
@@ -72,21 +70,17 @@ public class ImageProcessorManager
             .Where(f => allowedExtensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
             .ToArray();
 
-        int total = files.Count();
-        int current = 0;
+        currentOperationTotal = files.Count();
+        currentOperationProgress = 0;
+        currentOperationIndicator = indicator;
 
-        if (total == 0) { return; }
+        if (currentOperationTotal == 0) { return; }
 
-        var tasks = files
-            .Select(image => ConvertSingleImageToJpg(deleteOriginal, image).ContinueWith((t) =>
-            {
-                int curr = Interlocked.Increment(ref current);
-                indicator?.Report(new(curr, total));
-            }));
+        var tasks = files.Select(image => ConvertSingleImageToJpg(image, deleteOriginal));
 
         await Task.WhenAll(tasks.ToArray());
     }
-    private async Task ResizeSingleImageAsync(ImageSize size, ResizeModeOptions mode, string image)
+    private async Task ResizeSingleImageAsync(string image, ImageSize size, ResizeModeOptions mode)
     {
         await semaphore.WaitAsync();
 
@@ -100,10 +94,14 @@ public class ImageProcessorManager
             OnError?.Invoke($"Error resizing image '{image}': {ex.Message}");
         }
 
+        await IncrementIndicator();
+
         semaphore.Release();
     }
-    private async Task CompressSingleImageAsync(long quality, string image)
+    private async Task CompressSingleImageAsync(string image, long quality)
     {
+        await semaphore.WaitAsync();
+
         FileInfo fi = new(image);
         int fileSizeInKb = (int)(fi.Length / 1024);
 
@@ -118,9 +116,15 @@ public class ImageProcessorManager
         {
             OnError?.Invoke($"Error compress image '{image}': {ex.Message}");
         }
+
+        await IncrementIndicator();
+
+        semaphore.Release();
     }
-    private async Task ConvertSingleImageToJpg(bool deleteOriginal, string image)
+    private async Task ConvertSingleImageToJpg(string image, bool deleteOriginal)
     {
+        await semaphore.WaitAsync();
+
         if (Path.GetExtension(image).ToLower() == ".jpeg")
         {
             File.Move(image, Path.ChangeExtension(image, ".jpg"));
@@ -141,6 +145,10 @@ public class ImageProcessorManager
         {
             File.Delete(image);
         }
+
+        await IncrementIndicator();
+
+        semaphore.Release();
     }
     private bool IsFilesCountCheckSuccess(string folder)
     {
@@ -171,10 +179,18 @@ public class ImageProcessorManager
                 OnError?.Invoke($"Error deleting previous resized image '{img}': {ex.Message}");
             }
         }
+
+        lastResiedImages.Clear();
     }
     private void InitializeSemaphore()
     {
         semaphore?.Dispose();
         semaphore = new SemaphoreSlim(ThreadsLimit, ThreadsLimit);
+    }
+    private async Task IncrementIndicator()
+    {
+        await Task.Delay(MULTITHREAD_REPORT_DELAY);
+        int current = Interlocked.Increment(ref currentOperationProgress);
+        currentOperationIndicator?.Report(new(current, currentOperationTotal));
     }
 }
