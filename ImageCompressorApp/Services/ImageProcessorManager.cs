@@ -12,7 +12,7 @@ public class ImageProcessorManager
     public event Func<string, int, bool>? OnLimitExceededResolver;
     public TimeSpan MULTITHREAD_REPORT_DELAY { get; } = TimeSpan.FromMilliseconds(25);
     public int MinimumFilesCountToResolveRequire { get; set; } = 1000;
-    public bool IsDeletePreviuosResizedImages { get; set; } = false;
+    public bool IsDeletePreviuosProcessedImages { get; set; } = false;
     public long MinimumImageSizeToResizeInKb { get; set; } = 0;
     public int ThreadsLimit { get; set; } = 1;
 
@@ -21,7 +21,7 @@ public class ImageProcessorManager
     private IProgress<ProgressStatus>? currentOperationIndicator = null;
 
     private readonly IImageProcessor processor;
-    private readonly ConcurrentBag<string> lastResiedImages = new();
+    private readonly ConcurrentBag<string> processedImagesHistory = new();
     private SemaphoreSlim semaphore;
 
     public ImageProcessorManager(IImageProcessor processor)
@@ -31,6 +31,9 @@ public class ImageProcessorManager
     public async Task ResizeImages(string folder, ImageSize size, ResizeModeOptions mode = ResizeModeOptions.Stretch, IProgress<ProgressStatus>? indicator = null)
     {
         if (!IsFilesCountCheckSuccess(folder)) { return; }
+
+        await DeleteLastProcessedImagesIfNeed();
+
         InitializeSemaphore();
 
         var files = Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories);
@@ -44,10 +47,11 @@ public class ImageProcessorManager
 
         await Task.WhenAll(tasks.ToArray());
 
-        await DeleteLastResizedImagesIfNeed();
     }
     public async Task CompressImages(string folder, long quality = 100, IProgress<ProgressStatus>? indicator = null)
     {
+        await DeleteLastProcessedImagesIfNeed();
+
         InitializeSemaphore();
 
         var files = Directory.GetFiles(folder, "*.jpg", SearchOption.AllDirectories);
@@ -63,6 +67,8 @@ public class ImageProcessorManager
     }
     public async Task ConvertImagesToJpg(string folder, bool deleteOriginal = false, IProgress<ProgressStatus>? indicator = null)
     {
+        await DeleteLastProcessedImagesIfNeed();
+
         InitializeSemaphore();
 
         var allowedExtensions = new[] { ".webp", ".png", ".avif", ".jpeg" };
@@ -87,7 +93,7 @@ public class ImageProcessorManager
         try
         {
             await processor.ResizeImageAsync(image, size, mode);
-            lastResiedImages.Add(image);
+            processedImagesHistory.Add(image);
         }
         catch (Exception ex)
         {
@@ -110,6 +116,7 @@ public class ImageProcessorManager
             if (fileSizeInKb >= MinimumImageSizeToResizeInKb)
             {
                 await processor.CompressImageAsync(image, quality);
+                processedImagesHistory.Add(image);
             }
         }
         catch (Exception ex)
@@ -161,11 +168,11 @@ public class ImageProcessorManager
         }
         return true;
     }
-    private async Task DeleteLastResizedImagesIfNeed()
+    private async Task DeleteLastProcessedImagesIfNeed()
     {
-        if (!IsDeletePreviuosResizedImages || lastResiedImages.Count == 0) { return; }
+        if (!IsDeletePreviuosProcessedImages || processedImagesHistory.Count == 0) { return; }
 
-        foreach (var img in lastResiedImages)
+        foreach (var img in processedImagesHistory)
         {
             try
             {
@@ -180,7 +187,7 @@ public class ImageProcessorManager
             }
         }
 
-        lastResiedImages.Clear();
+        processedImagesHistory.Clear();
     }
     private void InitializeSemaphore()
     {

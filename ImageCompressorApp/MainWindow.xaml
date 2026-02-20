@@ -8,25 +8,22 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:ImageCompressorApp.ViewModels"
     Title="{Binding Title}"
-    Icon="/image_converter_icon.ico"
     Width="640"
     Height="345"
     MinWidth="600"
     d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel,
                                      IsDesignTimeCreatable=False}"
+    Icon="/image_converter_icon.ico"
     SizeToContent="WidthAndHeight"
     mc:Ignorable="d">
     <Grid Margin="4">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="385*" />
-            <ColumnDefinition Width="247*" />
-        </Grid.ColumnDefinitions>
         <Grid.Background>
             <SolidColorBrush Opacity="0.5" Color="#A4E483" />
         </Grid.Background>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid Grid.Row="0" Grid.ColumnSpan="2">
             <Grid.RowDefinitions>
@@ -173,7 +170,6 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
-                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -215,40 +211,46 @@
                         Grid.Column="3"
                         Text="{Binding CompressParameters.ResizeHeight, UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock
-                        Grid.Row="2"
+                        Grid.Row="3"
                         Grid.Column="2"
                         HorizontalAlignment="Right"
-                        Text="Удалять предыдущие" />
+                        Text="Растягивать" />
                     <CheckBox
-                        Grid.Row="2"
+                        Grid.Row="3"
                         Grid.Column="3"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         BorderBrush="LightGray"
-                        IsChecked="{Binding CompressParameters.IsDeletePreviusResizedImages}">
-                        <CheckBox.LayoutTransform>
-                            <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
-                        </CheckBox.LayoutTransform>
-                    </CheckBox>
-                    <TextBlock
-    Grid.Row="3"
-    Grid.Column="2"
-    HorizontalAlignment="Right"
-    Text="Растягивать" />
-                    <CheckBox
-    Grid.Row="3"
-    Grid.Column="3"
-    HorizontalAlignment="Center"
-    VerticalAlignment="Center"
-    BorderBrush="LightGray"
-    IsChecked="{Binding CompressParameters.IsStretchInstedOfPad}">
+                        IsChecked="{Binding CompressParameters.IsStretchInstedOfPad}">
                         <CheckBox.LayoutTransform>
                             <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
                         </CheckBox.LayoutTransform>
                     </CheckBox>
                 </Grid>
             </Border>
-           
+
         </Grid>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock
+                Grid.Column="0"
+                HorizontalAlignment="Right"
+                Text="Удалять файлы обработанные на предыдущем шаге" />
+            <CheckBox
+                Grid.Column="1"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                BorderBrush="LightGray"
+                IsChecked="{Binding CompressParameters.IsDeletePreviusResizedImages}">
+                <CheckBox.LayoutTransform>
+                    <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
+                </CheckBox.LayoutTransform>
+            </CheckBox>
+        </Grid>
+
     </Grid>
 </Window>

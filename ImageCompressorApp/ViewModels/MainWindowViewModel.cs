@@ -3,7 +3,6 @@ using CommunityToolkit.Mvvm.Input;
 using ImageCompressorApp.Models;
 using ImageCompressorApp.Services;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Windows;
 namespace ImageCompressorApp.ViewModels;
@@ -18,12 +17,16 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly ImageProcessorManager imageManager;
     [ObservableProperty]
     public ObservableCollection<string> log = new();
+
     [ObservableProperty]
     public string title = "Обработчик изображений";
+
     [ObservableProperty]
     public bool inProgress = false;
+
     [ObservableProperty]
     public CompressParametersViewodel compressParameters = new();
+
     [ObservableProperty]
     public ProgressStatus progressStatus = new(0, 0);
 
@@ -132,6 +135,7 @@ public partial class MainWindowViewModel : ObservableObject
         try
         {
             InProgress = true;
+            imageManager.IsDeletePreviuosProcessedImages = CompressParameters.IsDeleteFilesAfterCompress;
             action();
         }
         catch (Exception ex)
@@ -143,8 +147,8 @@ public partial class MainWindowViewModel : ObservableObject
             InProgress = false;
             if (Log.Count > 0)
             {
-                MessageBox.Show("При выполнении операций были ошибка\r\nОткрыть лог файл", "Информация", MessageBoxButton.OK, MessageBoxImage.Warning);
-                Process.Start("explorer.exe", $"/select,\"{LOG_FILE_FULL_PATH}\"");
+                //MessageBox.Show("При выполнении операций были ошибка\r\nОткрыть лог файл", "Информация", MessageBoxButton.OK, MessageBoxImage.Warning);
+                //Process.Start("explorer.exe", $"/select,\"{LOG_FILE_FULL_PATH}\"");
             }
         }
     }
