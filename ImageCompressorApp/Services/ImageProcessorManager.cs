@@ -170,24 +170,24 @@ public class ImageProcessorManager
     }
     private async Task DeleteLastProcessedImagesIfNeed()
     {
-        if (!IsDeletePreviuosProcessedImages || processedImagesHistory.Count == 0) { return; }
-
-        foreach (var img in processedImagesHistory)
+        if (IsDeletePreviuosProcessedImages && processedImagesHistory.Count > 0)
         {
-            try
+            foreach (var img in processedImagesHistory)
             {
-                if (File.Exists(img))
+                try
                 {
-                    File.Delete(img);
+                    if (File.Exists(img))
+                    {
+                        File.Delete(img);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    OnError?.Invoke($"Error deleting previous resized image '{img}': {ex.Message}");
                 }
             }
-            catch (Exception ex)
-            {
-                OnError?.Invoke($"Error deleting previous resized image '{img}': {ex.Message}");
-            }
+            processedImagesHistory.Clear();
         }
-
-        processedImagesHistory.Clear();
     }
     private void InitializeSemaphore()
     {

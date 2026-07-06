@@ -38,7 +38,7 @@ public partial class App : Application
         {
             vm.CompressParameters.ResizeWidth = int.Parse(resMatch.Groups["width"].Value);
             vm.CompressParameters.ResizeHeight = int.Parse(resMatch.Groups["height"].Value);
-            vm.CompressParameters.IsDeleteFilesAfterCompress = true;
+            //vm.CompressParameters.IsDeleteFilesAfterCompress = true;
             await vm.ConvertImagesCommand.ExecuteAsync(null);
             await Task.Delay(TimeSpan.FromSeconds(0.5));
             await vm.ResizeImagesCommand.ExecuteAsync(null);

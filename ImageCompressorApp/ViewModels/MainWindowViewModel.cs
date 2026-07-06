@@ -76,6 +76,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         await ExecuteLoggedAction(async () =>
         {
+            imageManager.IsDeletePreviuosProcessedImages = CompressParameters.IsDeleteFilesAfterCompress;
             await imageManager.ConvertImagesToJpg(WorkingFolder,
                 CompressParameters.IsDeleteFilesAfterCompress,
                 CreateIndicatorCallback(OperationType.ConvertToJpg));
@@ -87,6 +88,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         await ExecuteLoggedAction(async () =>
         {
+            imageManager.IsDeletePreviuosProcessedImages = CompressParameters.IsDeletePreviusResizedImages;
             await imageManager.ResizeImages(WorkingFolder,
                 new ImageSize(CompressParameters.ResizeWidth, CompressParameters.ResizeHeight),
                 CompressParameters.SelectedResizeMode,
@@ -135,7 +137,6 @@ public partial class MainWindowViewModel : ObservableObject
         try
         {
             InProgress = true;
-            imageManager.IsDeletePreviuosProcessedImages = CompressParameters.IsDeleteFilesAfterCompress;
             action();
         }
         catch (Exception ex)
