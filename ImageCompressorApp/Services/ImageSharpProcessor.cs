@@ -1,5 +1,6 @@
 ﻿using ImageCompressorApp.Interfaces;
 using ImageCompressorApp.Models;
+using ImageMagick;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Processing;
@@ -34,12 +35,22 @@ public class ImageSharpProcessor : IImageProcessor
 
         try
         {
-            using Image image = Image.Load(filePath);
-            image.Mutate(x =>
+            if (filePath.EndsWith(".avif"))
             {
-                x.BackgroundColor(Color.White);
-            });
-            await image.SaveAsync(outputPath, GetJpegEncoder());
+                using var image = new MagickImage(filePath);
+                image.Format = MagickFormat.Jpeg;
+                await image.WriteAsync(outputPath);
+                image.Dispose();
+            }
+            else
+            {
+                using Image image = Image.Load(filePath);
+                image.Mutate(x =>
+                {
+                    x.BackgroundColor(Color.White);
+                });
+                await image.SaveAsync(outputPath, GetJpegEncoder());
+            }
             return outputPath;
         }
         catch
