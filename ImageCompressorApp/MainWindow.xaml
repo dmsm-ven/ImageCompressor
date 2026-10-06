@@ -170,6 +170,7 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -211,12 +212,12 @@
                         Grid.Column="3"
                         Text="{Binding CompressParameters.ResizeHeight, UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock
-                        Grid.Row="3"
+                        Grid.Row="2"
                         Grid.Column="2"
                         HorizontalAlignment="Right"
                         Text="Растягивать" />
                     <CheckBox
-                        Grid.Row="3"
+                        Grid.Row="2"
                         Grid.Column="3"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -226,6 +227,29 @@
                             <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
                         </CheckBox.LayoutTransform>
                     </CheckBox>
+                    <!--  предустановленные разрешения  -->
+                    <ItemsControl
+                        Grid.Row="3"
+                        Grid.Column="0"
+                        Grid.ColumnSpan="4"
+                        Margin="0,6,0,0"
+                        ItemsSource="{Binding CompressParameters.ResolutionPresets}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button
+                                    Margin="0,0,6,0"
+                                    Padding="10,3"
+                                    Command="{Binding DataContext.CompressParameters.ApplyResolutionPresetCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    CommandParameter="{Binding}"
+                                    Content="{Binding}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </Grid>
             </Border>
 

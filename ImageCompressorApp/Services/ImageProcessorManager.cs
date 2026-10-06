@@ -10,8 +10,14 @@ public class ImageProcessorManager
 {
     public event Action<string>? OnError;
     public event Func<string, int, bool>? OnLimitExceededResolver;
+    /// <summary>Аргументы: общее количество удаляемых файлов, первые N имен файлов (без путей). Возвращает true если удаление подтверждено</summary>
+    public event Func<int, IReadOnlyList<string>, bool>? OnDeleteConfirmationResolver;
     public TimeSpan MULTITHREAD_REPORT_DELAY { get; } = TimeSpan.FromMilliseconds(25);
     public int MinimumFilesCountToResolveRequire { get; set; } = 1000;
+    /// <summary>Если удаляемых файлов больше этого значения, требуется подтверждение пользователя</summary>
+    public int MinimumFilesCountToConfirmDelete { get; set; } = 50;
+    /// <summary>Сколько имен файлов показывать в окне подтверждения удаления</summary>
+    public int DeleteConfirmationPreviewCount { get; set; } = 10;
     public bool IsDeletePreviuosProcessedImages { get; set; } = false;
     public long MinimumImageSizeToResizeInKb { get; set; } = 0;
     public int ThreadsLimit { get; set; } = 1;
@@ -32,7 +38,7 @@ public class ImageProcessorManager
     {
         if (!IsFilesCountCheckSuccess(folder)) { return; }
 
-        await DeleteLastProcessedImagesIfNeed();
+        if (!ConfirmAndDeleteLastProcessedImagesIfNeed()) { return; }
 
         InitializeSemaphore();
 
@@ -50,7 +56,7 @@ public class ImageProcessorManager
     }
     public async Task CompressImages(string folder, long quality = 100, IProgress<ProgressStatus>? indicator = null)
     {
-        await DeleteLastProcessedImagesIfNeed();
+        if (!ConfirmAndDeleteLastProcessedImagesIfNeed()) { return; }
 
         InitializeSemaphore();
 
@@ -67,7 +73,7 @@ public class ImageProcessorManager
     }
     public async Task ConvertImagesToJpg(string folder, bool deleteOriginal = false, IProgress<ProgressStatus>? indicator = null)
     {
-        await DeleteLastProcessedImagesIfNeed();
+        if (!ConfirmAndDeleteLastProcessedImagesIfNeed()) { return; }
 
         InitializeSemaphore();
 
@@ -81,6 +87,8 @@ public class ImageProcessorManager
         currentOperationIndicator = indicator;
 
         if (currentOperationTotal == 0) { return; }
+
+        if (deleteOriginal && !IsDeleteConfirmed(files)) { return; }
 
         var tasks = files.Select(image => ConvertSingleImageToJpg(image, deleteOriginal));
 
@@ -168,26 +176,43 @@ public class ImageProcessorManager
         }
         return true;
     }
-    private async Task DeleteLastProcessedImagesIfNeed()
+    private bool IsDeleteConfirmed(IReadOnlyCollection<string> filesToDelete)
     {
-        if (IsDeletePreviuosProcessedImages && processedImagesHistory.Count > 0)
+        if (filesToDelete.Count <= MinimumFilesCountToConfirmDelete) { return true; }
+
+        var preview = filesToDelete
+            .Take(DeleteConfirmationPreviewCount)
+            .Select(f => Path.GetFileName(f))
+            .ToList();
+
+        // Если обработчик не подписан - безопаснее отказаться от удаления
+        return OnDeleteConfirmationResolver?.Invoke(filesToDelete.Count, preview) ?? false;
+    }
+    /// <summary>Возвращает false если пользователь отказался от удаления (операцию нужно прервать)</summary>
+    private bool ConfirmAndDeleteLastProcessedImagesIfNeed()
+    {
+        if (!IsDeletePreviuosProcessedImages || processedImagesHistory.IsEmpty) { return true; }
+
+        var filesToDelete = processedImagesHistory.Distinct().ToList();
+
+        if (!IsDeleteConfirmed(filesToDelete)) { return false; }
+
+        foreach (var img in filesToDelete)
         {
-            foreach (var img in processedImagesHistory)
+            try
             {
-                try
+                if (File.Exists(img))
                 {
-                    if (File.Exists(img))
-                    {
-                        File.Delete(img);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    OnError?.Invoke($"Error deleting previous resized image '{img}': {ex.Message}");
+                    File.Delete(img);
                 }
             }
-            processedImagesHistory.Clear();
+            catch (Exception ex)
+            {
+                OnError?.Invoke($"Error deleting previous resized image '{img}': {ex.Message}");
+            }
         }
+        processedImagesHistory.Clear();
+        return true;
     }
     private void InitializeSemaphore()
     {
