@@ -98,7 +98,7 @@
                     <Label
                         Grid.Column="1"
                         HorizontalAlignment="Left"
-                        Content="Преобразование .png и .gif в .jpg" />
+                        Content="Преобразование [png][gif][webp][jpeg] в .jpg" />
                     <TextBlock Grid.Column="2" Text="Удалять оригиналы" />
                     <CheckBox
                         Grid.Column="3"
