@@ -42,6 +42,17 @@ public partial class MainWindowViewModel : ObservableObject
                MessageBoxImage.Warning);
             return res == MessageBoxResult.Yes;
         };
+        imageManager.OnDeleteConfirmationResolver += (count, names) =>
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                var more = count - names.Count;
+                var text = $"Будет удалено файлов: {count}.\r\n\r\nПервые {names.Count}:\r\n"
+                    + string.Join("\r\n", names)
+                    + (more > 0 ? $"\r\n... и еще {more}" : "")
+                    + "\r\n\r\nПродолжить и удалить файлы?";
+                var res = MessageBox.Show(text, "Подтверждение удаления", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+                return res == MessageBoxResult.Yes;
+            });
         Log.CollectionChanged += (o, e) => OnPropertyChanged(nameof(CanCopyErrorsTextCommand));
     }
 
@@ -88,6 +99,7 @@ public partial class MainWindowViewModel : ObservableObject
         InProgress = true;
         try
         {
+            imageManager.IsDeletePreviuosResizedImages = CompressParameters.IsDeletePreviusResizedImages;
             await imageManager.ResizeImages(WorkingFolder,
                 new ImageSize(CompressParameters.ResizeWidth, CompressParameters.ResizeHeight),
                 CompressParameters.SelectedResizeMode,

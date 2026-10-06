@@ -10,8 +10,14 @@ public class ImageProcessorManager
 {
     public event Action<string>? OnError;
     public event Func<string, int, bool>? OnLimitExceededResolver;
+    /// <summary>Аргументы: общее количество удаляемых файлов, первые N имен файлов (без путей). Возвращает true если удаление подтверждено</summary>
+    public event Func<int, IReadOnlyList<string>, bool>? OnDeleteConfirmationResolver;
     public TimeSpan MULTITHREAD_REPORT_DELAY { get; } = TimeSpan.FromMilliseconds(25);
     public int MinimumFilesCountToResolveRequire { get; set; } = 1000;
+    /// <summary>Если удаляемых файлов больше этого значения, требуется подтверждение пользователя</summary>
+    public int MinimumFilesCountToConfirmDelete { get; set; } = 50;
+    /// <summary>Сколько имен файлов показывать в окне подтверждения удаления</summary>
+    public int DeleteConfirmationPreviewCount { get; set; } = 10;
     public bool IsDeletePreviuosResizedImages { get; set; } = false;
     public long MinimumImageSizeToResizeInKb { get; set; } = 0;
     public int ThreadsLimit { get; set; } = 1;
@@ -39,6 +45,8 @@ public class ImageProcessorManager
         currentOperationIndicator = indicator;
 
         if (currentOperationTotal == 0) { return; }
+
+        if (IsDeletePreviuosResizedImages && !IsDeleteConfirmed(files)) { return; }
 
         var tasks = files.Select(image => ResizeSingleImageAsync(image, size, mode));
 
@@ -75,6 +83,8 @@ public class ImageProcessorManager
         currentOperationIndicator = indicator;
 
         if (currentOperationTotal == 0) { return; }
+
+        if (deleteOriginal && !IsDeleteConfirmed(files)) { return; }
 
         var tasks = files.Select(image => ConvertSingleImageToJpg(image, deleteOriginal));
 
@@ -149,6 +159,18 @@ public class ImageProcessorManager
         await IncrementIndicator();
 
         semaphore.Release();
+    }
+    private bool IsDeleteConfirmed(IReadOnlyCollection<string> filesToDelete)
+    {
+        if (filesToDelete.Count <= MinimumFilesCountToConfirmDelete) { return true; }
+
+        var preview = filesToDelete
+            .Take(DeleteConfirmationPreviewCount)
+            .Select(f => Path.GetFileName(f))
+            .ToList();
+
+        // Если обработчик не подписан - безопаснее отказаться от операции
+        return OnDeleteConfirmationResolver?.Invoke(filesToDelete.Count, preview!) ?? false;
     }
     private bool IsFilesCountCheckSuccess(string folder)
     {
